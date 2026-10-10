@@ -1,0 +1,20 @@
+DEFINE
+    VAR __lots =
+        CALCULATETABLE ( VALUES ( trace_genealogy[lot_id] ), trace_genealogy[ingredient_lot_id] = @ingredientLotId )
+EVALUATE
+CALCULATETABLE (
+    ROW (
+        "Finished Lots", COUNTROWS ( __lots ),
+        "Cases Shipped", SUM ( trace_genealogy[cases_shipped] ),
+        "Customers", DISTINCTCOUNTNOBLANK ( trace_genealogy[customer_id] ),
+        "Shipments", DISTINCTCOUNTNOBLANK ( trace_genealogy[shipment_id] ),
+        "Cases Destroyed",
+            CALCULATE (
+                SUM ( fact_waste[cases] ),
+                REMOVEFILTERS ( trace_genealogy ),
+                TREATAS ( __lots, fact_waste[lot_id] ),
+                fact_waste[reason] = "Supplier Recall"
+            )
+    ),
+    trace_genealogy[ingredient_lot_id] = @ingredientLotId
+)

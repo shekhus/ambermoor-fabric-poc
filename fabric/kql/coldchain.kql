@@ -1,0 +1,38 @@
+// KQL_ColdChain: Eventhouse queries for lab L6                                   [D2/D3]
+// Run blocks one at a time in a KQL queryset attached to KQL_ColdChain.
+// Databricks analogue: a streaming Delta table + SQL. Here the store is a time-series-optimised KQL database.
+
+// 1) Table (run before the first ingestion; Get data can also create it, but explicit types avoid string columns)
+.create-merge table ReeferTelemetry (ts: datetime, truck_id: string, shipment_id: string, facility_id: string, temp_c: real, setpoint_c: real, door_open: bool, reefer_status: string)
+
+// 2) Sanity check after ingesting data/generated/reefer_telemetry.csv  (expect 183,921 rows for seed 42)
+ReeferTelemetry
+| summarize rows = count(), shipments = dcount(shipment_id), first_ts = min(ts), last_ts = max(ts)
+
+// 3) Cold-chain excursions for the whole window: rule = cumulative minutes above 5.0 C >= 30
+//    Golden Q2: 4 shipments, all TRK-117
+ReeferTelemetry
+| summarize readings_above_5c = countif(temp_c > 5.0), max_temp_c = max(temp_c), first_ts = min(ts) by shipment_id, truck_id, facility_id
+| extend time_out_of_range_minutes = readings_above_5c * 15
+| where time_out_of_range_minutes >= 30
+| order by time_out_of_range_minutes desc
+
+// 4) The trap: "any reading above 5 C" (door-open spikes) -> 112 shipments, not 4
+ReeferTelemetry
+| where temp_c > 5.0
+| distinct shipment_id
+| count                                        // exact; dcount() would be an estimate
+
+// 5) Truck health: daily max temperature per truck, render as a chart
+ReeferTelemetry
+| where truck_id in ("TRK-117", "TRK-113")
+| summarize max_temp_c = max(temp_c) by truck_id, bin(ts, 1d)
+| render timechart
+
+// 6) Optional [D3]: pre-aggregate time-out-of-range per shipment with a materialized view.
+//    Verify supported aggregations and the backfill property on Learn before running.
+.create materialized-view with (backfill=true) ShipmentTimeOutOfRange on table ReeferTelemetry
+{
+    ReeferTelemetry
+    | summarize readings = count(), readings_above_5c = countif(temp_c > 5.0), max_temp_c = max(temp_c) by shipment_id, truck_id, facility_id
+}

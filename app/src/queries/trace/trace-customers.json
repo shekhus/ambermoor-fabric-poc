@@ -1,0 +1,15 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "y": { "field": "customer", "type": "nominal", "title": null, "sort": "-x" },
+    "x": { "field": "casesShipped", "type": "quantitative", "title": "Cases shipped" },
+    "color": { "field": "channel", "type": "nominal", "title": "Channel" },
+    "tooltip": [
+      { "field": "customer", "title": "Customer" },
+      { "field": "channel", "title": "Channel" },
+      { "field": "casesShipped", "title": "Cases", "format": ",.0f" },
+      { "field": "shipments", "title": "Shipments", "format": ",.0f" }
+    ]
+  }
+}

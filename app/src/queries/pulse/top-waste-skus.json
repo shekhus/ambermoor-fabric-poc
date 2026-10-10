@@ -1,0 +1,14 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "y": { "field": "sku", "type": "nominal", "title": null, "sort": "-x" },
+    "x": { "field": "wasteCases", "type": "quantitative", "title": "Waste cases", "stack": "zero" },
+    "color": { "field": "reason", "type": "nominal", "title": "Reason" },
+    "tooltip": [
+      { "field": "sku", "title": "SKU" },
+      { "field": "reason", "title": "Reason" },
+      { "field": "wasteCases", "title": "Cases", "format": ",.0f" }
+    ]
+  }
+}

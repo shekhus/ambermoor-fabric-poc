@@ -1,0 +1,9 @@
+EVALUATE
+ROW (
+    "Cases Produced", [Cases Produced],
+    "Waste Rate %", [Waste Rate %],
+    "OTIF %", [OTIF %],
+    "Fill Rate %", [Fill Rate %],
+    "Excursion Shipments", [Excursion Shipments],
+    "Shipments", [Shipments]
+)

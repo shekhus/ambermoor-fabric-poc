@@ -1,0 +1,14 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "line", "point": true, "strokeWidth": 2 },
+  "encoding": {
+    "x": { "field": "yearMonth", "type": "ordinal", "title": "Month" },
+    "y": { "field": "wasteRate", "type": "quantitative", "title": "Waste rate", "axis": { "format": ".1%" } },
+    "color": { "field": "facilityId", "type": "nominal", "title": "Facility" },
+    "tooltip": [
+      { "field": "facilityId", "title": "Facility" },
+      { "field": "yearMonth", "title": "Month" },
+      { "field": "wasteRate", "title": "Waste rate", "format": ".2%" }
+    ]
+  }
+}

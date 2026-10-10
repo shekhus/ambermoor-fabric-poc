@@ -1,0 +1,20 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    trace_genealogy[lot_id],
+    trace_genealogy[facility_id],
+    trace_genealogy[sku_id],
+    trace_genealogy[production_date],
+    trace_genealogy[best_by_date],
+    TREATAS ( { @ingredientLotId }, trace_genealogy[ingredient_lot_id] ),
+    "Cases Produced",
+        CALCULATE ( SUM ( fact_lot[cases_produced] ), TREATAS ( VALUES ( trace_genealogy[lot_id] ), fact_lot[lot_id] ) ),
+    "Cases Shipped", SUM ( trace_genealogy[cases_shipped] ),
+    "Customers", DISTINCTCOUNTNOBLANK ( trace_genealogy[customer_id] ),
+    "Cases Destroyed",
+        CALCULATE (
+            SUM ( fact_waste[cases] ),
+            TREATAS ( VALUES ( trace_genealogy[lot_id] ), fact_waste[lot_id] ),
+            fact_waste[reason] = "Supplier Recall"
+        )
+)
+ORDER BY trace_genealogy[production_date], trace_genealogy[lot_id]

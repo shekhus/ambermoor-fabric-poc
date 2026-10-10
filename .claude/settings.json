@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./CLAUDE.local.md)",
+      "Bash(npx rayfin up --force *)",
+      "Bash(rayfin up --force *)",
+      "Bash(git push --force *)"
+    ]
+  }
+}

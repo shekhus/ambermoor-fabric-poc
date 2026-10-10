@@ -1,0 +1,9 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_customer[customer_name],
+    dim_customer[channel],
+    TREATAS ( { @ingredientLotId }, trace_genealogy[ingredient_lot_id] ),
+    "Cases Shipped", SUM ( trace_genealogy[cases_shipped] ),
+    "Shipments", DISTINCTCOUNTNOBLANK ( trace_genealogy[shipment_id] )
+)
+ORDER BY [Cases Shipped] DESC

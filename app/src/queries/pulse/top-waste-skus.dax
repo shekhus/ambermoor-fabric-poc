@@ -1,0 +1,16 @@
+EVALUATE
+VAR TopSkus =
+    TOPN (
+        5,
+        SUMMARIZECOLUMNS ( dim_product[sku_name], "Waste", [Waste Cases (Operational)] ),
+        [Waste], DESC
+    )
+RETURN
+    SUMMARIZECOLUMNS (
+        dim_product[sku_name],
+        fact_waste[reason],
+        TREATAS ( SELECTCOLUMNS ( TopSkus, "sku", dim_product[sku_name] ), dim_product[sku_name] ),
+        TREATAS ( { "Aged Out", "Damaged", "QA Reject" }, fact_waste[reason] ),
+        "Waste Cases", SUM ( fact_waste[cases] )
+    )
+ORDER BY dim_product[sku_name], fact_waste[reason]

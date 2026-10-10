@@ -1,0 +1,7 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_date[year_month],
+    dim_facility[facility_id],
+    "Waste Rate %", [Waste Rate %]
+)
+ORDER BY dim_date[year_month], dim_facility[facility_id]

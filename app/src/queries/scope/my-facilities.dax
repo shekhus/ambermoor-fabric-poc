@@ -1,0 +1,6 @@
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS ( dim_facility[facility_id], dim_facility[facility_name], dim_facility[facility_type] ),
+    NOT ISBLANK ( dim_facility[facility_id] )
+)
+ORDER BY dim_facility[facility_id]

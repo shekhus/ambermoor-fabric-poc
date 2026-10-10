@@ -1,0 +1,13 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "x": { "field": "lotId", "type": "nominal", "title": "Finished lot", "sort": null },
+    "y": { "field": "casesShipped", "type": "quantitative", "title": "Cases shipped" },
+    "tooltip": [
+      { "field": "lotId", "title": "Lot" },
+      { "field": "sku", "title": "SKU" },
+      { "field": "casesShipped", "title": "Cases shipped", "format": ",.0f" }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+# secrets & personal
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+
+# generated data (regenerate with seed 42)
+data/generated/
+
+# python / node
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+
+# Rayfin app local + deployment state (commit app/rayfin/.lockfile.json)
+app/rayfin/.env
+app/rayfin/.deployments.json
+app/rayfin/.temp/
+**/.env.local
+
+# local endpoints + local Spark runs
+fabric.endpoints.json
+.local-spark-warehouse/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# build outputs (tools/py_to_ipynb.py)
+build/
+
+# app: Fabric connection IDs (recreate with: npx fabric-app-data add semanticModel ambermoor --workspace <WS_DEV_ID> --item <SM_ID>)
+app/fabric.yaml
+
+# starter kit archive (contents are in the repo)
+ambermoor-fabric-poc.zip

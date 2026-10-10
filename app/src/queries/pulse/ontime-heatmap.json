@@ -1,0 +1,22 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "rect" },
+  "encoding": {
+    "x": {
+      "field": "weekday", "type": "ordinal", "title": "Requested delivery day",
+      "sort": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    },
+    "y": { "field": "facilityId", "type": "ordinal", "title": "Ship-from facility" },
+    "color": {
+      "field": "onTime", "type": "quantitative", "title": "On time",
+      "scale": { "scheme": "redyellowgreen", "domain": [0.6, 1] },
+      "legend": { "format": ".0%" }
+    },
+    "tooltip": [
+      { "field": "facilityId", "title": "Facility" },
+      { "field": "weekday", "title": "Day" },
+      { "field": "onTime", "title": "On time", "format": ".1%" },
+      { "field": "shipments", "title": "Shipments", "format": ",.0f" }
+    ]
+  }
+}

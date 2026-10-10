@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fabric": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/fabric-mcp@latest", "server", "start", "--mode", "all"]
+    },
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    }
+  }
+}

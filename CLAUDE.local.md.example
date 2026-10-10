@@ -1,0 +1,22 @@
+# Personal, machine-specific context. Copy to CLAUDE.local.md (gitignored).
+# Claude Code loads CLAUDE.local.md after CLAUDE.md.
+
+## IDs (fill as you create items; GUIDs from the Fabric URL or `fabric` MCP)
+- TENANT_ID:
+- WS_DEV_ID:            (WS-AMBERMOOR-DEV)
+- WS_TEST_ID:           (WS-AMBERMOOR-TEST)
+- WS_APP_ID:            (WS-AMBERMOOR-APP)
+- WS_AGENT_ID:          (WS-AMBERMOOR-AGENT, FT6)
+- LH_AMBERMOOR_ID:
+- SM_AMBERMOOR_OPS_ID:
+- KQL_COLDCHAIN_QUERY_URI:
+- DATA_AGENT_ID:        (FT6)
+
+## Test users (RLS)
+- QA manager P03: qa.p03@<your-tenant>
+- Ops director:   ops.director@<your-tenant>
+
+## Capacity
+- Trial end date:
+- Trial capacity region:          (F2 must match)
+- F2 resource name (FT6):         remember to pause when idle

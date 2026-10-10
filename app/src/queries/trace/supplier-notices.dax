@@ -1,0 +1,9 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    fact_supplier_notice[notice_id],
+    fact_supplier_notice[ingredient_lot_id],
+    fact_supplier_notice[notice_date],
+    fact_supplier_notice[notice_type],
+    fact_supplier_notice[status]
+)
+ORDER BY fact_supplier_notice[notice_date] DESC

@@ -1,0 +1,9 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_facility[facility_id],
+    dim_date[weekday],
+    dim_customer[channel],
+    "On Time %", [On Time %],
+    "Shipments", [Shipments]
+)
+ORDER BY dim_facility[facility_id], dim_date[weekday], dim_customer[channel]
