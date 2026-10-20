@@ -12,6 +12,7 @@
 #   - gold.fact_order_line: + ship_from_facility_id (direct star join to dim_facility, no snowflake path)
 #   - gold.trace_genealogy: ingredient lot -> finished lot -> shipment -> customer (denormalised traceability mart)
 #   - gold.dim_facility: optional real test-user UPNs for RLS via upn_overrides
+#   - gold.fact_trip: one trip per shipment with dock wait, drive time and trip cost (fleet extension)
 # Databricks analogue: a gold "serving" job building denormalised marts for AI/BI and Genie.
 
 # %% parameters
@@ -22,6 +23,7 @@ upn_overrides = {}                      # e.g. {"P03": "qa.p03@yourtenant.onmicr
 excursion_threshold_c = 5.0
 reading_minutes = 15
 min_tor_minutes = 30
+dock_wait_story_h = 2.0                 # Q9: a late shipment is "dock-caused" above this
 
 # %% helpers
 from pyspark.sql import functions as F
@@ -50,7 +52,7 @@ if upn_overrides:
     facility = facility.withColumn(
         "qa_manager_upn", F.coalesce(F.element_at(upn_map, F.col("facility_id")), F.col("qa_manager_upn")))
 write(facility, "dim_facility")
-for t in ["dim_product", "dim_customer", "dim_supplier", "dim_ingredient", "dim_date"]:
+for t in ["dim_product", "dim_customer", "dim_truck", "dim_supplier", "dim_ingredient", "dim_date"]:
     write(bronze(t), t)
 
 # %% orders and shipments (OTIF + cold-chain flags precomputed)
@@ -98,10 +100,38 @@ trace = (bronze("bridge_lot_ingredient")
          .withColumn("ship_date", F.to_date("ship_ts")).drop("ship_ts"))
 write(trace, "trace_genealogy")
 
+# %% fleet: one trip per shipment (dock wait, drive time, cost)
+# dock_wait_h = departed_ts - ship_ts (planned departure); drive_h = delivered_ts - departed_ts.
+# trip_cost_usd = route_km * cost_per_km_usd + (dock_wait_h + drive_h) * driver_cost_per_hour_usd (demo rates).
+def hours(a, b):
+    return (F.col(b).cast("double") - F.col(a).cast("double")) / 3600   # timestamp -> epoch seconds, keeps micros
+
+
+cases = bronze("fact_shipment_line").groupBy("shipment_id").agg(F.sum("cases_delivered").alias("cases_delivered"))
+trip = (shipment.select("shipment_id", "truck_id", "ship_from_facility_id", "customer_id", "ship_date",
+                        "requested_delivery_date", "ship_ts", "departed_ts", "delivered_ts", "on_time", "otif",
+                        "is_excursion")
+        .join(bronze("dim_truck").select("truck_id", "cost_per_km_usd", "driver_cost_per_hour_usd"), "truck_id")
+        .join(bronze("dim_customer").select("customer_id", "route_km"), "customer_id")
+        .join(cases, "shipment_id", "left")
+        .withColumn("cases_delivered", F.coalesce(F.col("cases_delivered"), F.lit(0)))
+        .withColumn("lane_id", F.concat_ws("->", "ship_from_facility_id", "customer_id"))
+        .withColumn("dock_wait_h", hours("ship_ts", "departed_ts"))
+        .withColumn("drive_h", hours("departed_ts", "delivered_ts"))
+        .withColumn("trip_cost_usd", F.round(F.col("route_km") * F.col("cost_per_km_usd")
+                                             + (F.col("dock_wait_h") + F.col("drive_h"))
+                                             * F.col("driver_cost_per_hour_usd"), 2))
+        .withColumn("is_dock_delayed", F.col("dock_wait_h") > dock_wait_story_h))
+write(trip, "fact_trip")
+
 # %% acceptance checks against agent/golden_answers.json (seed 42)
 g = spark.table(f"{gold_schema}.fact_shipment")
 t = spark.table(f"{gold_schema}.trace_genealogy").where(F.col("ingredient_lot_id") == "ILOT-P02-ING02-20260908")
 ol = spark.table(f"{gold_schema}.fact_order_line")
+ft = spark.table(f"{gold_schema}.fact_trip")
+p07_mon_fs_late = (ft.join(bronze("dim_customer").select("customer_id", "channel"), "customer_id")
+                   .where("ship_from_facility_id = 'P07' AND channel = 'Foodservice' AND NOT on_time")
+                   .where(F.dayofweek("requested_delivery_date") == 2))   # Spark: Sunday = 1, Monday = 2
 checks = {
     "Q1 recall finished lots (36)": (t.select("lot_id").distinct().count(), 36),
     "Q1 recall cases shipped (145)": (t.agg(F.sum("cases_shipped")).first()[0], 145),
@@ -111,6 +141,10 @@ checks = {
     "Q4 P02 OTIF % (90.09)": (round(g.where("ship_from_facility_id = 'P02'")
                                      .agg(F.avg(F.col("otif").cast("int"))).first()[0] * 100, 2), 90.09),
     "Q6 fill rate % (99.54)": (round(ol.agg(F.sum("cases_shipped") / F.sum("cases_ordered")).first()[0] * 100, 2), 99.54),
+    "Q9 P07 Mon Foodservice late, dock-caused (14)": (p07_mon_fs_late.where("is_dock_delayed").count(), 14),
+    "Q9 late elsewhere, dock-caused (0)": (ft.where("NOT on_time AND is_dock_delayed").count()
+                                           - p07_mon_fs_late.where("is_dock_delayed").count(), 0),
+    "Q10 total trip cost USD (3957156.99)": (round(ft.agg(F.sum("trip_cost_usd")).first()[0], 2), 3957156.99),
 }
 failed = {k: v for k, v in checks.items() if v[0] != v[1]}
 for k, (got, exp) in checks.items():

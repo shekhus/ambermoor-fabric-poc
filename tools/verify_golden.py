@@ -78,6 +78,37 @@ def main():
     fr = con.execute("SELECT ROUND(SUM(cases_shipped) * 100.0 / SUM(cases_ordered), 2) FROM fact_order_line").fetchone()[0]
     checks.append(("Q6 fill rate %", float(fr), g["Q6_fill_rate"]["fill_rate_pct"]))
 
+    # Q9 / Q10 fleet: same trip formula as gold.fact_trip in NB_03_gold_fasttrack
+    con.execute("""
+        CREATE VIEW fact_trip AS
+        SELECT s.shipment_id, s.ship_from_facility_id, s.customer_id, c.channel, s.on_time,
+               dayname(s.requested_delivery_ts) AS req_weekday, c.route_km,
+               epoch(s.departed_ts - s.ship_ts) / 3600.0 AS dock_wait_h,
+               epoch(s.delivered_ts - s.departed_ts) / 3600.0 AS drive_h,
+               ROUND(c.route_km * t.cost_per_km_usd
+                     + epoch(s.delivered_ts - s.ship_ts) / 3600.0 * t.driver_cost_per_hour_usd, 2) AS trip_cost_usd
+        FROM fact_shipment s JOIN dim_truck t USING (truck_id) JOIN dim_customer c USING (customer_id)
+    """)
+    q9 = g["Q9_dock_wait_p07"]
+    late, dock, other = con.execute("""
+        SELECT COUNT(*) FILTER (WHERE seg AND NOT on_time),
+               COUNT(*) FILTER (WHERE seg AND NOT on_time AND dock_wait_h > 2),
+               COUNT(*) FILTER (WHERE NOT seg AND NOT on_time AND dock_wait_h > 2)
+        FROM (SELECT *, ship_from_facility_id = 'P07' AND channel = 'Foodservice' AND req_weekday = 'Monday' AS seg
+              FROM fact_trip)
+    """).fetchone()
+    checks += [("Q9 late segment shipments", late, q9["segment_late_shipments"]),
+               ("Q9 dock-caused (segment)", dock, q9["segment_late_dock_caused"]),
+               ("Q9 dock-caused (elsewhere)", other, q9["other_late_dock_caused"])]
+
+    q10 = g["Q10_trip_cost"]
+    total = con.execute("SELECT ROUND(SUM(trip_cost_usd), 2) FROM fact_trip").fetchone()[0]
+    lanes = [r[0] for r in con.execute("""
+        SELECT customer_id FROM fact_trip GROUP BY ship_from_facility_id, customer_id
+        ORDER BY SUM(trip_cost_usd) DESC, customer_id LIMIT 5""").fetchall()]
+    checks += [("Q10 total trip cost", float(total), q10["total_trip_cost_usd"]),
+               ("Q10 top5 lanes", lanes, [x["customer_id"] for x in q10["top5_lanes"]])]
+
     ok = True
     for name, got, exp in checks:
         status = "PASS" if got == exp else "FAIL"

@@ -274,6 +274,87 @@
     "lots": 41,
     "cases": 1594
   },
+  "Q9_dock_wait_p07": {
+    "question": "P07 Southeast DC is late on Monday Foodservice deliveries. Is the delay at the dock or on the road?",
+    "rule": "dock_wait_h = departed_ts - ship_ts (planned departure); drive_h = delivered_ts - departed_ts; a late shipment is dock-caused when dock_wait_h > 2",
+    "segment_shipments": 39,
+    "segment_late_shipments": 14,
+    "segment_late_dock_caused": 14,
+    "segment_late_avg_dock_wait_h": 6.26,
+    "segment_late_avg_drive_h": 13.1,
+    "segment_late_avg_planned_transit_h": 13.57,
+    "network_avg_dock_wait_h": 0.52,
+    "other_late_shipments": 158,
+    "other_late_dock_caused": 0,
+    "sources": [
+      "fact_trip (gold)",
+      "fact_shipment",
+      "dim_customer"
+    ]
+  },
+  "Q10_trip_cost": {
+    "question": "What did trucking cost over the data window, which 5 lanes (facility -> customer) cost the most, and what is the freight cost per case delivered by facility?",
+    "rule": "trip_cost_usd = route_km * dim_truck.cost_per_km_usd + (dock_wait_h + drive_h) * dim_truck.driver_cost_per_hour_usd, rounded to cents per trip; one-way, no fuel surcharge or tolls. Rates are demo assumptions.",
+    "total_trip_cost_usd": 3957156.99,
+    "trips": 3317,
+    "top5_lanes": [
+      {
+        "facility_id": "P08",
+        "customer_id": "C0110",
+        "trips": 39,
+        "route_km": 1154.7,
+        "total_cost_usd": 87543.17,
+        "avg_cost_usd": 2244.7
+      },
+      {
+        "facility_id": "P07",
+        "customer_id": "C0109",
+        "trips": 39,
+        "route_km": 1042.8,
+        "total_cost_usd": 78997.69,
+        "avg_cost_usd": 2025.58
+      },
+      {
+        "facility_id": "P08",
+        "customer_id": "C0117",
+        "trips": 39,
+        "route_km": 1059.5,
+        "total_cost_usd": 77171.96,
+        "avg_cost_usd": 1978.77
+      },
+      {
+        "facility_id": "P05",
+        "customer_id": "C0076",
+        "trips": 39,
+        "route_km": 1027.8,
+        "total_cost_usd": 74470.59,
+        "avg_cost_usd": 1909.5
+      },
+      {
+        "facility_id": "P08",
+        "customer_id": "C0120",
+        "trips": 38,
+        "route_km": 1003.1,
+        "total_cost_usd": 72776.1,
+        "avg_cost_usd": 1915.16
+      }
+    ],
+    "cost_per_case_by_facility": {
+      "P01": 22.63,
+      "P02": 24.02,
+      "P03": 20.99,
+      "P04": 22.91,
+      "P05": 28.65,
+      "P06": 19.05,
+      "P07": 24.31,
+      "P08": 31.93
+    },
+    "sources": [
+      "fact_trip (gold)",
+      "dim_truck",
+      "dim_customer"
+    ]
+  },
   "_window": {
     "start": "2026-07-01",
     "end": "2026-09-28"

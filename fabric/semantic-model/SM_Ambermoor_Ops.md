@@ -105,6 +105,36 @@ CALCULATETABLE (
 If a number is off, compare with `NB_03_gold_fasttrack`'s acceptance cell first. That narrows it down to the
 data or the DAX.
 
+## 6. Fleet extension (proposed, not pushed to the model yet)
+Adds trucking cost and dock wait for the Power BI / Fabric App "Fleet & freight" page. Live position stays in KQL
+(Real-Time Dashboard); the model only holds trip history. Apply with the same TMDL route as FT3, after
+`NB_03_gold_fasttrack` has written `gold.fact_trip` and `gold.dim_truck`.
+
+| From (many) | To (one) |
+|---|---|
+| `fact_trip[ship_from_facility_id]` | `dim_facility[facility_id]` (RLS flows to trips) |
+| `fact_trip[customer_id]` | `dim_customer[customer_id]` |
+| `fact_trip[truck_id]` | `dim_truck[truck_id]` |
+| `fact_trip[requested_delivery_date]` | `dim_date[date]` |
+
+```dax
+Trips = COUNTROWS ( fact_trip )
+Trip Cost = SUM ( fact_trip[trip_cost_usd] )
+Freight Cost per Case = DIVIDE ( [Trip Cost], SUM ( fact_trip[cases_delivered] ) )
+Avg Dock Wait (h) = AVERAGE ( fact_trip[dock_wait_h] )
+Avg Drive (h) = AVERAGE ( fact_trip[drive_h] )
+Dock-Delayed Late Trips = CALCULATE ( [Trips], fact_trip[is_dock_delayed] = TRUE (), fact_trip[on_time] = FALSE () )
+```
+
+```dax
+// E. Fleet: expect Trip Cost 3,957,156.99 and Dock-Delayed Late Trips 14 (golden Q9/Q10)
+EVALUATE ROW ( "Trip Cost", [Trip Cost], "Dock-Delayed Late Trips", [Dock-Delayed Late Trips] )
+
+// F. Freight cost per case by facility: expect P08 31.93 highest, P06 19.05 lowest
+EVALUATE SUMMARIZECOLUMNS ( dim_facility[facility_id], "Cost per case", [Freight Cost per Case] )
+ORDER BY [Cost per case] DESC
+```
+
 ## Optional accelerator: let Claude Code build the model
 Microsoft's Power BI Modeling/Authoring MCP server can create tables, relationships, measures and roles
 (local server GA v1.0.0, Sept 2026; hosted endpoint Preview). It needs the XMLA endpoint (Read Write).

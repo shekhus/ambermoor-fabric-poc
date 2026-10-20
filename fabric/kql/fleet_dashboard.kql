@@ -1,0 +1,49 @@
+// RTD_Ambermoor_Fleet: tile queries for a Real-Time Dashboard on KQL_ColdChain                  [D2/D3]
+// One query per tile. Prereq: coldchain.kql blocks 1 and 7 (table with GPS columns + TruckLatestPosition()).
+// Click-path and visual settings: docs/specs/fleet-trucks.md section 3.
+// Databricks analogue: an AI/BI dashboard on a streaming table, but here every tile re-runs KQL on an auto-refresh.
+//
+// Dashboard parameters to create first (Manage > Parameters):
+//   _truck     single selection, query-based: ReeferTelemetry | distinct truck_id | order by truck_id asc
+//   _facility  multiple selection, query-based, "Select all" on: ReeferTelemetry | distinct facility_id | order by facility_id asc
+// Historical data has no "now". For the live replay (tools/reefer_simulator.py), add `| where ts > ago(2h)` to tiles
+// 1-3 or use the dashboard time range parameter.
+
+// Tile 1 - Map: where every truck is now, coloured by status       Visual: Map, Latitude/Longitude, Label = truck_id
+TruckLatestPosition()
+| where facility_id in (_facility) or isempty(_facility)      // "Select all" pattern from Learn
+
+// Tile 2 - Multi stat: fleet at a glance                            Visual: Multi stat
+TruckLatestPosition()
+| summarize Trucks = count(), Moving = countif(status == "Moving"), Stopped = countif(status in ("Stopped", "At dock / parked")),
+            WarmLoads = countif(status startswith "Warm load")
+
+// Tile 3 - Table: alarms (same rows the Activator rule fires on)    Visual: Table, conditional formatting on temp_c > 5
+TruckLatestPosition()
+| where status startswith "Warm load"
+| project truck_id, shipment_id, temp_c, speed_kmh, status, ts
+
+// Tile 4 - Line chart: reefer temperature of the selected truck     Visual: Line chart, x = ts, y = temp_c / setpoint_c
+ReeferTelemetry
+| where truck_id == _truck
+| where ts between (_startTime .. _endTime)
+| project ts, temp_c, setpoint_c
+
+// Tile 5 - Map: breadcrumb trail of the selected truck              Visual: Map, Label = temp_c
+ReeferTelemetry
+| where truck_id == _truck
+| where ts between (_startTime .. _endTime)
+| project ts, latitude, longitude, temp_c, speed_kmh, shipment_id
+
+// Tile 6 - Column chart: shipments that waited > 2 h at the dock     Visual: Column chart, x = facility_id
+ReeferTelemetry
+| where ts between (_startTime .. _endTime)
+| summarize first_ts = min(ts), departed_ts = minif(ts, speed_kmh > 0) by shipment_id, facility_id
+| extend dock_wait_h = (departed_ts - first_ts) / 1h
+| summarize ['Waited > 2 h'] = countif(dock_wait_h > 2), ['Avg dock wait (h)'] = round(avg(dock_wait_h), 2) by facility_id
+| order by ['Waited > 2 h'] desc
+
+// Tile 7 - Time chart: trucks on the road per hour                  Visual: Area chart
+ReeferTelemetry
+| where ts between (_startTime .. _endTime)
+| summarize ['Trucks moving'] = dcountif(truck_id, speed_kmh > 0) by bin(ts, 1h)

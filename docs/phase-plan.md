@@ -14,6 +14,14 @@ Today: Fri 9 Oct 2026. Client kickoff: ~early Nov 2026.
 - [ ] FT4 Fabric App (Preview): KPI page, lot trace, hold writeback, RLS tested as `qa.p03`. **9 Oct: 3 pages built + deployed to WS-AMBERMOOR-APP (status healthy); visuals validated vs golden. 10 Oct 01:10: portal smoke test PASS (AT1–AT3 values, AT6 healthy); writeback PASS (hold created → Released, timeline). Open: RLS as qa.p03 (AT4), P02 user isolation (AT5).**
 - [ ] FT6 Fabric Data Agent on F2 (same region): published, MCP in Claude Code, eval re-run, **F2 paused**
 
+## Fleet slice: trucks, live location, trip cost → `docs/specs/fleet-trucks.md` (added 21 Oct)
+Before 28 Oct, or after the exam window. Local part done 21 Oct: generator, golden Q9/Q10, `verify_golden` 14 × PASS.
+- [ ] F1 Re-upload 19 files, re-run NB_01 + NB_03 (fact_trip checks PASS) [D2]
+- [ ] F2 Eventhouse with GPS columns + `TruckLatestPosition()` (do together with FT2) [D2]
+- [ ] F3 `RTD_Ambermoor_Fleet` dashboard, live replay of TRK-117 [D2]
+- [ ] F4 Activator rule: warm load on moving truck [D3]
+- [ ] F5 Model §6 + Fleet & freight page; `/ask-ambermoor eval` Q1–Q10 [D1]
+
 ## Phase 1: DP-700 labs (Mon 12 – Wed 28 Oct)
 Labs already partly covered by the fast track get a lighter pass: theory, exam traps and the missing pieces.
 

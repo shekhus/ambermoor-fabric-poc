@@ -176,6 +176,24 @@ OTIF_FACILITY, OTIF_WEEKDAY, OTIF_CHANNEL, OTIF_LATE_P = "P07", 0, "Foodservice"
 BASE_LATE_P = 0.05
 EXCURSION_C, SETPOINT_C, READING_MIN = 5.0, 2.0, 15
 
+# Fleet / GPS extension. Uses its own RNG stream (seed, FLEET_STREAM) so Q1-Q8 stay byte-identical.
+FLEET_STREAM = 7
+# Approximate state-level coordinates (not a real site). Customers sit inside a land-ward bearing sector.
+FACILITY_COORDS = {
+    "P01": (45.4, -122.6), "P02": (46.2, -119.1), "P03": (40.0, -83.0), "P04": (32.8, -96.8),
+    "P05": (35.2, -80.8), "P06": (20.5, -100.8), "P07": (33.7, -84.4), "P08": (51.0, -114.0),
+}
+CUSTOMER_BEARINGS = {  # degrees clockwise from north (lo, hi); hi may exceed 360
+    "P01": (20, 160), "P02": (60, 180), "P03": (190, 290), "P04": (280, 420),
+    "P05": (200, 340), "P06": (310, 345), "P07": (250, 390), "P08": (30, 150),
+}
+KM_PER_TRANSIT_HOUR = {"P06": 32.0}  # straight-line km per planned transit hour; P06: slower mountain roads
+DEFAULT_KM_PER_TRANSIT_HOUR = 42.0  # (stops, hours-of-service)
+ROAD_FACTOR = 1.25             # road km / straight-line km
+DOCK_WAIT_BASE_H = (0.25, 0.75)
+DRIVER_RATE_FACTOR = {"US": 1.0, "CA": 1.05, "MX": 0.45}
+DOCK_WAIT_STORY_H = 2.0        # Q9: a late shipment is "dock-caused" when dock_wait_h exceeds this
+
 
 def min_remaining_days(shelf_life: int) -> int:
     """Customers won't accept product with less remaining life than this (synthetic rule)."""
@@ -432,15 +450,19 @@ def build(seed: int, start: date, days: int, upn_domain: str):
     # ---------------- shipments + delivery performance ----------------
     fac_index = {f[0]: i for i, f in enumerate(FACILITIES)}
     fleet = {f: [f"TRK-{100 + fac_index[f] * 6 + j}" for j in range(1, 7)] for f in fac_index}
-    ship_rows = []
+    ship_rows, dock_delay_h = [], {}  # dock_delay_h: storyline delay spent at the dock (fleet extension)
     for o in orders.itertuples():
         truck = fleet[o.ship_from_facility_id][int(rng.integers(6))]
         channel = cust.loc[o.customer_id, "channel"]
         late_p = BASE_LATE_P
-        if (o.ship_from_facility_id == OTIF_FACILITY and channel == OTIF_CHANNEL
-                and o.requested_delivery_date.weekday() == OTIF_WEEKDAY):
+        in_story = (o.ship_from_facility_id == OTIF_FACILITY and channel == OTIF_CHANNEL
+                    and o.requested_delivery_date.weekday() == OTIF_WEEKDAY)
+        if in_story:
             late_p = OTIF_LATE_P
-        delay_h = float(rng.normal(0, 0.4)) + (float(rng.uniform(3.5, 7.0)) if rng.random() < late_p else 0.0)
+        noise_h = float(rng.normal(0, 0.4))  # same draw order as before: normal, random, uniform
+        bump_h = float(rng.uniform(3.5, 7.0)) if rng.random() < late_p else 0.0
+        delay_h = noise_h + bump_h
+        dock_delay_h[f"SH{o.order_id[2:]}"] = bump_h if in_story else 0.0  # P07 story: trucks wait at the DC
         delivered = o.ship_ts + pd.Timedelta(hours=float(o.transit_hours + delay_h))
         excursion = truck == REEFER_TRUCK and REEFER_FROM <= o.ship_date <= REEFER_TO
         ship_rows.append(dict(shipment_id=f"SH{o.order_id[2:]}", order_id=o.order_id, customer_id=o.customer_id,
@@ -550,8 +572,12 @@ def build(seed: int, start: date, days: int, upn_domain: str):
     fact_lot = fact_lot.copy()
     fact_lot["has_failed_qa"] = fact_lot.lot_id.isin(failed_lots)
 
+    dim_facility, dim_customer, dim_truck, fact_shipment, reefer = add_fleet(
+        seed, fleet, dim_facility, dim_customer, fact_shipment, reefer, dock_delay_h)
+
     tables = dict(
         dim_facility=dim_facility, dim_product=dim_product, dim_customer=dim_customer.drop(columns=["order_weekdays"]),
+        dim_truck=dim_truck,
         dim_supplier=dim_supplier, dim_ingredient=dim_ingredient, dim_date=dim_date,
         fact_ingredient_receipt=fact_ingredient_receipt, fact_lot=fact_lot, bridge_lot_ingredient=bridge_lot_ingredient,
         fact_quality_test=fact_quality_test, fact_order=fact_order, fact_order_line=fact_order_line,
@@ -561,6 +587,95 @@ def build(seed: int, start: date, days: int, upn_domain: str):
     )
     golden = compute_golden(tables, recall_ilot, start, end)
     return tables, golden
+
+
+# ----------------------------------------------------------------------------------
+def add_fleet(seed, fleet, dim_facility, dim_customer, fact_shipment, reefer, dock_delay_h):
+    """Additive fleet layer: coordinates, dim_truck, actual departure and GPS on the reefer readings.
+
+    Runs on its own RNG stream after everything else, so every pre-existing column and golden answer is unchanged.
+    """
+    frng = np.random.default_rng([seed, FLEET_STREAM])
+    fac_country = dict(zip(dim_facility.facility_id, dim_facility.country))
+
+    dim_facility = dim_facility.copy()
+    dim_facility["latitude"] = dim_facility.facility_id.map(lambda f: FACILITY_COORDS[f][0])
+    dim_facility["longitude"] = dim_facility.facility_id.map(lambda f: FACILITY_COORDS[f][1])
+
+    # customers: straight-line distance consistent with transit_hours, on a land-ward bearing from their facility
+    dim_customer = dim_customer.copy()
+    lat0 = np.radians(dim_customer.ship_from_facility_id.map(lambda f: FACILITY_COORDS[f][0]).to_numpy())
+    lon0 = np.radians(dim_customer.ship_from_facility_id.map(lambda f: FACILITY_COORDS[f][1]).to_numpy())
+    lo = dim_customer.ship_from_facility_id.map(lambda f: CUSTOMER_BEARINGS[f][0]).to_numpy()
+    hi = dim_customer.ship_from_facility_id.map(lambda f: CUSTOMER_BEARINGS[f][1]).to_numpy()
+    bearing = np.radians(frng.uniform(lo, hi) % 360)
+    kmh = dim_customer.ship_from_facility_id.map(lambda f: KM_PER_TRANSIT_HOUR.get(f, DEFAULT_KM_PER_TRANSIT_HOUR))
+    km = dim_customer.transit_hours.to_numpy() * kmh.to_numpy() * frng.uniform(0.85, 1.0, len(dim_customer))
+    d = km / 6371.0
+    lat1 = np.arcsin(np.sin(lat0) * np.cos(d) + np.cos(lat0) * np.sin(d) * np.cos(bearing))
+    lon1 = lon0 + np.arctan2(np.sin(bearing) * np.sin(d) * np.cos(lat0), np.cos(d) - np.sin(lat0) * np.sin(lat1))
+    dim_customer["latitude"] = np.degrees(lat1).round(4)
+    dim_customer["longitude"] = np.degrees(lon1).round(4)
+    dim_customer["route_km"] = (km * ROAD_FACTOR).round(1)
+
+    # trucks: reefer tractor-trailers; cost rates are demo assumptions, not market rates
+    trucks = []
+    for fac, ids in fleet.items():
+        for tid in ids:
+            trucks.append(dict(truck_id=tid, home_facility_id=fac, unit_type="Tractor + 53 ft reefer trailer",
+                               model_year=int(frng.integers(2019, 2026)),
+                               cost_per_km_usd=round(float(frng.uniform(1.05, 1.35)), 2),
+                               driver_cost_per_hour_usd=round(float(frng.uniform(30, 38))
+                                                              * DRIVER_RATE_FACTOR[fac_country[fac]], 2)))
+    dim_truck = pd.DataFrame(trucks)
+
+    # actual departure: short loading wait, plus the planted P07 delay spent at the dock (not on the road)
+    fact_shipment = fact_shipment.copy()
+    base = frng.uniform(*DOCK_WAIT_BASE_H, len(fact_shipment))
+    dock_h = base + fact_shipment.shipment_id.map(dock_delay_h).to_numpy()
+    departed = (fact_shipment.ship_ts + pd.to_timedelta(dock_h, unit="h")).dt.round("min")
+    fact_shipment["departed_ts"] = departed.where(departed < fact_shipment.delivered_ts,
+                                                  fact_shipment.delivered_ts - pd.Timedelta(minutes=30))
+
+    # GPS on each reefer reading: at the dock until departure, then along a gently curved path to the customer
+    cust = dim_customer.set_index("customer_id")
+    sh = fact_shipment.set_index("shipment_id")
+    curve = pd.Series(frng.uniform(-0.12, 0.12, len(sh)), index=sh.index)  # path bow, as a fraction of leg length
+    r = reefer[["ts", "shipment_id", "facility_id", "door_open"]].copy()
+    cid = r.shipment_id.map(sh.customer_id)
+    dep, arr = r.shipment_id.map(sh.departed_ts), r.shipment_id.map(sh.delivered_ts)
+    olat, olon = r.facility_id.map(lambda f: FACILITY_COORDS[f][0]), r.facility_id.map(lambda f: FACILITY_COORDS[f][1])
+    dlat, dlon = cid.map(cust.latitude), cid.map(cust.longitude)
+    frac = ((r.ts - dep) / (arr - dep)).clip(0, 1).to_numpy()
+    bow = np.sin(np.pi * frac) * r.shipment_id.map(curve).to_numpy()
+    lat = olat + frac * (dlat - olat) - bow * (dlon - olon)
+    lon = olon + frac * (dlon - olon) + bow * (dlat - olat)
+    moving = ((r.ts > dep) & (r.ts < arr)).to_numpy()
+    drive_h = ((arr - dep).dt.total_seconds() / 3600).to_numpy()
+    avg_kmh = cid.map(cust.route_km).to_numpy() / drive_h
+    speed = avg_kmh * frng.uniform(0.85, 1.15, len(r))
+    stopped = (frng.random(len(r)) < 0.04) | r.door_open.to_numpy()  # rest/fuel stops; door opens only when stopped
+    speed = np.where(moving & ~stopped, speed, 0.0)
+    jitter = np.where(moving, 0.003, 0.0003)
+    reefer = reefer.copy()
+    reefer["latitude"] = (lat + frng.normal(0, 1, len(r)) * jitter).round(5)
+    reefer["longitude"] = (lon + frng.normal(0, 1, len(r)) * jitter).round(5)
+    reefer["speed_kmh"] = speed.round(1)
+    reefer["ignition_on"] = moving
+    return dim_facility, dim_customer, dim_truck, fact_shipment, reefer
+
+
+def trip_costs(t):
+    """One row per shipment: dock wait, drive time and cost. Same formula as gold.fact_trip in NB_03."""
+    s = t["fact_shipment"].merge(t["dim_truck"], on="truck_id").merge(
+        t["dim_customer"][["customer_id", "channel", "route_km"]], on="customer_id")
+    s["dock_wait_h"] = (s.departed_ts - s.ship_ts).dt.total_seconds() / 3600
+    s["drive_h"] = (s.delivered_ts - s.departed_ts).dt.total_seconds() / 3600
+    s["trip_cost_usd"] = (s.route_km * s.cost_per_km_usd
+                          + (s.dock_wait_h + s.drive_h) * s.driver_cost_per_hour_usd).round(2)
+    cases = t["fact_shipment_line"].groupby("shipment_id").cases_delivered.sum()
+    s["cases_delivered"] = s.shipment_id.map(cases).fillna(0).astype(int)
+    return s
 
 
 # ----------------------------------------------------------------------------------
@@ -663,6 +778,46 @@ def compute_golden(t, recall_ilot, start, end):
     qa = waste[waste.reason == "QA Reject"]
     g["Q8_qa_rejects"] = dict(question="How many lots were rejected by QA and how many cases were destroyed?",
                               lots=int(qa.lot_id.nunique()), cases=int(qa.cases.sum()))
+
+    # Q9 dock wait: P07's late Monday Foodservice deliveries are caused at the dock, not on the road
+    tr = trip_costs(t)
+    tr["req_weekday"] = pd.to_datetime(tr.requested_delivery_ts).dt.day_name()
+    story = (tr.ship_from_facility_id == OTIF_FACILITY) & (tr.channel == OTIF_CHANNEL) & (tr.req_weekday == "Monday")
+    late = ~tr.on_time
+    dock_caused = tr.dock_wait_h > DOCK_WAIT_STORY_H
+    g["Q9_dock_wait_p07"] = dict(
+        question="P07 Southeast DC is late on Monday Foodservice deliveries. Is the delay at the dock or on the road?",
+        rule=f"dock_wait_h = departed_ts - ship_ts (planned departure); drive_h = delivered_ts - departed_ts; "
+             f"a late shipment is dock-caused when dock_wait_h > {DOCK_WAIT_STORY_H:g}",
+        segment_shipments=int(story.sum()), segment_late_shipments=int((story & late).sum()),
+        segment_late_dock_caused=int((story & late & dock_caused).sum()),
+        segment_late_avg_dock_wait_h=round(float(tr.loc[story & late, "dock_wait_h"].mean()), 2),
+        segment_late_avg_drive_h=round(float(tr.loc[story & late, "drive_h"].mean()), 2),
+        segment_late_avg_planned_transit_h=round(float(
+            tr.loc[story & late, "customer_id"].map(t["dim_customer"].set_index("customer_id").transit_hours).mean()), 2),
+        network_avg_dock_wait_h=round(float(tr.dock_wait_h.mean()), 2),
+        other_late_shipments=int((~story & late).sum()),
+        other_late_dock_caused=int((~story & late & dock_caused).sum()),
+        sources=["fact_trip (gold)", "fact_shipment", "dim_customer"])
+
+    # Q10 trip cost: lanes and facilities
+    lanes = (tr.groupby(["ship_from_facility_id", "customer_id"])
+             .agg(trips=("shipment_id", "size"), route_km=("route_km", "first"),
+                  total_cost_usd=("trip_cost_usd", "sum"), avg_cost_usd=("trip_cost_usd", "mean"))
+             .reset_index().sort_values(["total_cost_usd", "customer_id"], ascending=[False, True]))
+    fac = tr.groupby("ship_from_facility_id").agg(cost=("trip_cost_usd", "sum"), cases=("cases_delivered", "sum"))
+    g["Q10_trip_cost"] = dict(
+        question="What did trucking cost over the data window, which 5 lanes (facility -> customer) cost the most, "
+                 "and what is the freight cost per case delivered by facility?",
+        rule="trip_cost_usd = route_km * dim_truck.cost_per_km_usd + (dock_wait_h + drive_h) * "
+             "dim_truck.driver_cost_per_hour_usd, rounded to cents per trip; one-way, no fuel surcharge or tolls. "
+             "Rates are demo assumptions.",
+        total_trip_cost_usd=round(float(tr.trip_cost_usd.sum()), 2), trips=len(tr),
+        top5_lanes=[dict(facility_id=r.ship_from_facility_id, customer_id=r.customer_id, trips=int(r.trips),
+                         route_km=float(r.route_km), total_cost_usd=round(float(r.total_cost_usd), 2),
+                         avg_cost_usd=round(float(r.avg_cost_usd), 2)) for r in lanes.head(5).itertuples()],
+        cost_per_case_by_facility={k: round(float(v.cost / v.cases), 2) for k, v in fac.iterrows()},
+        sources=["fact_trip (gold)", "dim_truck", "dim_customer"])
     g["_window"] = dict(start=str(start), end=str(end))
     return g
 
@@ -697,6 +852,7 @@ def main():
     tel = tables["reefer_telemetry"].copy()
     tel["ts"] = tel.ts.dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     tel["door_open"] = tel.door_open.map({True: "true", False: "false"})
+    tel["ignition_on"] = tel.ignition_on.map({True: "true", False: "false"})
     tel.to_csv(out / "reefer_telemetry.csv", index=False)
     (out / "golden_answers.json").write_text(json.dumps(golden, indent=2, default=str))
     (out / "manifest.json").write_text(json.dumps(dict(seed=a.seed, start=a.start, days=a.days,

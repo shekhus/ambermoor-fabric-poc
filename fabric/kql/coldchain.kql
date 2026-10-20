@@ -3,7 +3,10 @@
 // Databricks analogue: a streaming Delta table + SQL. Here the store is a time-series-optimised KQL database.
 
 // 1) Table (run before the first ingestion; Get data can also create it, but explicit types avoid string columns)
-.create-merge table ReeferTelemetry (ts: datetime, truck_id: string, shipment_id: string, facility_id: string, temp_c: real, setpoint_c: real, door_open: bool, reefer_status: string)
+//    The last four columns are the fleet/GPS extension. On an existing table, .create-merge appends them and keeps
+//    existing columns and data (Learn: ".create-merge table command"). Then check that the Eventstream destination's
+//    ingestion mapping includes them (KQL DB > table > Edit schema > "Auto update Mappings").
+.create-merge table ReeferTelemetry (ts: datetime, truck_id: string, shipment_id: string, facility_id: string, temp_c: real, setpoint_c: real, door_open: bool, reefer_status: string, latitude: real, longitude: real, speed_kmh: real, ignition_on: bool)
 
 // 2) Sanity check after ingesting data/generated/reefer_telemetry.csv  (expect 183,921 rows for seed 42)
 ReeferTelemetry
@@ -36,3 +39,48 @@ ReeferTelemetry
     ReeferTelemetry
     | summarize readings = count(), readings_above_5c = countif(temp_c > 5.0), max_temp_c = max(temp_c) by shipment_id, truck_id, facility_id
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Fleet / GPS extension: same table, four extra columns. Hot path = "where is the truck now, is the load cold?"
+// Trip cost and dock-wait history (cold path) live in gold.fact_trip in the lakehouse.
+// ---------------------------------------------------------------------------------------------------------------
+
+// 7) Latest-state pattern: one row per truck, its most recent reading.                                      [D2]
+//    Databricks analogue: max_by(struct(*), ts) GROUP BY truck_id. Fabric Maps layers and Activator both bind to a
+//    stored function (Maps no longer accept embedded queryset queries). Status column drives map colour.
+.create-or-alter function with (folder = "Fleet", docstring = "Latest position and reefer state per truck")
+TruckLatestPosition() {
+    ReeferTelemetry
+    | summarize arg_max(ts, *) by truck_id
+    | extend status = case(temp_c > 5.0 and speed_kmh > 0, "Warm load, moving",
+                           temp_c > 5.0, "Warm load, stopped",
+                           not(ignition_on), "At dock / parked",
+                           speed_kmh == 0, "Stopped",
+                           "Moving")
+    | project truck_id, ts, latitude, longitude, speed_kmh, ignition_on, temp_c, door_open, status, shipment_id, facility_id
+}
+
+// 8) Where is TRK-117 now and is its load safe?  (historical data: "now" = last reading in the table)
+TruckLatestPosition()
+| where truck_id == "TRK-117"
+
+// 9) Activator query (current state, run on a schedule): warm load on a moving truck.                        [D3]
+//    Activator uses the query run time as the event time, so return current state only, never history.
+TruckLatestPosition()
+| where status == "Warm load, moving"
+| project truck_id, shipment_id, temp_c, speed_kmh, latitude, longitude, ts
+
+// 10) Dock dwell per shipment from GPS: time from first reading until the truck first moves.
+//     Golden Q9 uses gold.fact_trip (departed_ts); this is the same signal seen from telematics, 15-min resolution.
+ReeferTelemetry
+| summarize first_ts = min(ts), departed_ts = minif(ts, speed_kmh > 0) by shipment_id, truck_id, facility_id
+| extend dock_wait_h = round((departed_ts - first_ts) / 1h, 2)
+| summarize shipments = count(), avg_dock_wait_h = round(avg(dock_wait_h), 2),
+            over_2h = countif(dock_wait_h > 2) by facility_id
+| order by over_2h desc                     // seed 42: P07 = 15, every other facility 0 (14 of the 15 arrived late)
+
+// 11) Breadcrumb trail of one shipment (map: plot points in ts order). SH000752 = a TRK-117 excursion.
+ReeferTelemetry
+| where shipment_id == "SH000752"
+| project ts, latitude, longitude, speed_kmh, temp_c, reefer_status
+| order by ts asc

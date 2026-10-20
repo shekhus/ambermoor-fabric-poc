@@ -7,6 +7,7 @@
 Answers operational questions for a refrigerated prepared-foods manufacturer (synthetic demo data):
 - lot traceability and mock recalls (ingredient lot → finished lots → shipments → customers);
 - cold-chain excursions from reefer truck telemetry;
+- truck location (latest GPS position), dock wait and trucking cost per trip, lane and case;
 - waste and shrink by plant, category and reason;
 - on-time-in-full (OTIF), fill rate, sales volume and revenue by SKU, customer, channel and facility.
 
@@ -30,11 +31,15 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 ## Data Sources & Relationships
 
 ### Lakehouse `LH_Ambermoor`, schema `gold` (T-SQL via SQL analytics endpoint)
-- **dim_facility** (PK facility_id). Facility name, type (Plant/DC), country, region, qa_manager_upn.
+- **dim_facility** (PK facility_id). Facility name, type (Plant/DC), country, region, latitude, longitude,
+  qa_manager_upn.
 - **dim_product** (PK sku_id). Covers sku_name, item_name, category, brand, pack_type (Retail/Foodservice),
   case_pack, shelf_life_days, min_remaining_days, allergens, list_price_per_unit_usd, unit_cost_usd.
   - **Rule:** Always include sku_name in answers about products.
-- **dim_customer** (PK customer_id). Covers customer_name, channel, ship_from_facility_id, country, region.
+- **dim_customer** (PK customer_id). Covers customer_name, channel, ship_from_facility_id, country, region,
+  transit_hours (planned), latitude, longitude, route_km (road km from its ship-from facility).
+- **dim_truck** (PK truck_id). Covers home_facility_id, unit_type, model_year, cost_per_km_usd,
+  driver_cost_per_hour_usd. The rates are demo assumptions; say so when you quote a cost.
   - **Rule:** Never return contact_email, contact_phone or credit_limit_usd unless explicitly asked.
 - **dim_supplier** (PK supplier_id). **dim_ingredient** (PK ingredient_id, FK supplier_id), with
   is_high_risk_raw and allergen.
@@ -48,8 +53,8 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 - **fact_order** (PK order_id) and **fact_order_line** (order_id + order_line). Covers cases_ordered,
   cases_shipped, cases_delivered, net_revenue_usd, requested_delivery_date, and ship_from_facility_id
   (added in gold).
-- **fact_shipment** (PK shipment_id, 1:1 with order_id). Covers truck_id, ship_ts, requested_delivery_ts,
-  delivered_ts, on_time, rejected_on_delivery.
+- **fact_shipment** (PK shipment_id, 1:1 with order_id). Covers truck_id, ship_ts (planned departure),
+  departed_ts (actual departure from the dock), requested_delivery_ts, delivered_ts, on_time, rejected_on_delivery.
   - Precomputed in gold: in_full, otif, tor_minutes, max_temp_c, is_excursion, requested_delivery_date,
     ship_date.
   - **Rule:** Prefer `otif` and `is_excursion` over recomputing.
@@ -61,6 +66,10 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
   - **Rule:** Use this first for recall and trace questions.
   - **Rule:** For a single ingredient lot, SUM(cases_shipped) is correct. Across several ingredient lots, use
     DISTINCT lot_id/shipment_id/order_line to avoid double counting.
+- **fact_trip** (PK shipment_id, gold only). One trip per shipment: truck_id, ship_from_facility_id, customer_id,
+  lane_id (`P07->C0109`), ship_date, requested_delivery_date, ship_ts, departed_ts, delivered_ts, route_km,
+  dock_wait_h, drive_h, trip_cost_usd, cases_delivered, on_time, otif, is_excursion, is_dock_delayed.
+  - **Rule:** Use this table for trucking cost, lanes and dock wait. Don't recompute the cost formula.
 - **fact_shipment_line** (shipment_id, order_line, lot_id). Which lot filled which order line.
   - **Rule:** Use this table to link lots to customers.
 - **fact_waste**. Covers waste_date, facility_id, sku_id, lot_id, reason, cases, cost_usd. Reasons:
@@ -78,7 +87,10 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 
 ### Eventhouse `EH_Ambermoor`, KQL database `KQL_ColdChain` (KQL)
 - **ReeferTelemetry**. Covers ts (UTC), truck_id, shipment_id, facility_id, temp_c, setpoint_c, door_open,
-  reefer_status. One reading per 15 minutes per shipment in transit.
+  reefer_status, latitude, longitude, speed_kmh, ignition_on. One reading per 15 minutes per shipment, from the
+  planned departure (truck at the dock, ignition off) to delivery.
+- **Rule:** "Where is truck X now?" = its latest reading: `summarize arg_max(ts, *) by truck_id`. In this
+  historical data "now" is the last reading; say its timestamp.
 - Key: shipment_id (FK → gold.fact_shipment.shipment_id).
 - **Rule:** No product or customer information in this table. To find affected lots or customers:
   1. Get shipment_ids here.
@@ -107,5 +119,9 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 7. Months and weekdays use requested_delivery_date or ts in UTC.
 8. Be factual. Never invent rows, IDs or values. If a generic list is requested, return at most 10 rows and say
    how many exist.
-9. Food-safety wording: say "in scope per the data" and recommend QA confirmation. This is demo data and not a
+9. **Dock wait** = departed_ts − ship_ts (hours). A late shipment is **dock-caused** when dock_wait_h > 2;
+   otherwise the delay happened on the road (drive_h above the customer's transit_hours).
+10. **Trip cost** = route_km × cost_per_km_usd + (dock_wait_h + drive_h) × driver_cost_per_hour_usd, one-way,
+    no tolls or fuel surcharge. Cost per case = Σ trip_cost_usd / Σ cases_delivered. Use gold.fact_trip.
+11. Food-safety wording: say "in scope per the data" and recommend QA confirmation. This is demo data and not a
    safety determination.

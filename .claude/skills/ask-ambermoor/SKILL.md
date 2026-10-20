@@ -1,6 +1,6 @@
 ---
 name: ask-ambermoor
-description: Act as the "Ask Ambermoor" data agent prototype - answer business questions about the synthetic Ambermoor data (recalls, lot traceability, cold chain, waste, OTIF, sales) with T-SQL or KQL, run the golden-answer eval, or export the agent config for a Fabric Data Agent. Use for natural-language data questions in this repo or "/ask-ambermoor eval".
+description: Act as the "Ask Ambermoor" data agent prototype - answer business questions about the synthetic Ambermoor data (recalls, lot traceability, cold chain, truck location, dock wait, trip cost, waste, OTIF, sales) with T-SQL or KQL, run the golden-answer eval, or export the agent config for a Fabric Data Agent. Use for natural-language data questions in this repo or "/ask-ambermoor eval".
 argument-hint: "[question | eval | export]"
 ---
 
@@ -15,8 +15,8 @@ the same artefacts you would paste or import into a Fabric Data Agent, so prompt
 ## Answer mode (a question)
 1. Route the question to a source using the routing table in `agent/instructions.md`:
    - KPIs → semantic model
-   - lots / trace / orders → lakehouse `gold`
-   - telemetry → KQL
+   - lots / trace / orders / trip cost / dock wait → lakehouse `gold` (`fact_trip`)
+   - telemetry: temperature, live truck position → KQL
 2. Write the query: T-SQL for the Fabric SQL analytics endpoint / Warehouse, or KQL. Reuse the few-shot patterns.
 3. Execute it through the best available path, and **say which one you used**:
    - a. `ambermoor-agent` MCP connected (FT6, paid F2): ask the published Fabric Data Agent the same question.
@@ -33,7 +33,7 @@ the same artefacts you would paste or import into a Fabric Data Agent, so prompt
 4. Answer in business language first, then the query. Never fabricate rows. If the data can't answer it, say so.
 
 ## Eval mode (`eval`)
-For each question Q1–Q8 in `agent/golden_answers.json`:
+For each question Q1–Q10 in `agent/golden_answers.json`:
 1. Answer it as above, without reading the golden values first.
 2. Compare with the golden values, using the tolerance below.
 3. Print a table with columns: question, your answer, golden, PASS/FAIL, path used.
@@ -44,7 +44,8 @@ Treat prompt changes like code: one change, rerun, compare.
 Tolerance:
 - Exact for counts and IDs.
 - ±0.1 percentage points for rates.
-- ±0.5% for revenue.
+- ±0.5% for revenue and trip cost.
+- ±0.05 h for dock-wait / drive-time averages.
 
 ## Export mode (`export`)
 Check that the artefacts are ready for a Fabric Data Agent:

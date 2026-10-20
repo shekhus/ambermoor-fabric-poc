@@ -49,6 +49,8 @@ incidents. Never name real companies in demo content.
   - Pipeline `PL_Ambermoor_Daily`, Dataflow Gen2 `DF_Customer_Master`
   - Notebooks `NB_01_load_bronze`, `NB_03_gold_fasttrack` (fast track); `NB_02_silver`, `NB_03_gold` (lab L3)
   - Gold extras for app/agent: `trace_genealogy` mart; `fact_shipment` has `otif`, `is_excursion`, `tor_minutes`
+  - Fleet slice: `dim_truck`, gold `fact_trip` (dock wait, trip cost); GPS columns on `ReeferTelemetry`;
+    dashboard `RTD_Ambermoor_Fleet` (spec: `docs/specs/fleet-trucks.md`)
 - IDs (workspace/item GUIDs) live in `CLAUDE.local.md` (gitignored). Ask if missing. Never hard-code them in committed files.
 
 ## Two cockpits: where to launch Claude Code
@@ -113,7 +115,7 @@ claude mcp list                                                       # check se
   - `gold` = star schema with business-friendly names for **Direct Lake**.
 - **Code-first.** Notebooks as `.py` source in `fabric/notebooks/`, KQL in `.kql`, T-SQL in `.sql`. Portal-only
   steps go into the lab's `docs/lab-log.md` entry as a click-path.
-- Item naming prefixes: `LH_ WH_ SM_ EH_ KQL_ ES_ PL_ DF_ NB_ RPT_ APP_ DA_`.
+- Item naming prefixes: `LH_ WH_ SM_ EH_ KQL_ ES_ PL_ DF_ NB_ RPT_ RTD_ MAP_ APP_ DA_`.
 - The data contract is `docs/data-model.md`. If a column changes, update the generator, the contract,
   `agent/` few-shots and the golden answers together, then rerun `verify_golden.py`.
 - Business rules shared by the app, the agent and the model:

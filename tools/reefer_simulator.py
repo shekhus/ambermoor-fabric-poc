@@ -78,10 +78,14 @@ def main():
             new_ts = (t0_now + (orig - t0_orig) / a.speed).strftime("%Y-%m-%dT%H:%M:%SZ")
             events = []
             for r in group:
-                events.append(dict(ts=new_ts, truck_id=r["truck_id"], shipment_id=r["shipment_id"],
-                                   facility_id=r["facility_id"], temp_c=float(r["temp_c"]),
-                                   setpoint_c=float(r["setpoint_c"]), door_open=r["door_open"].lower() == "true",
-                                   reefer_status=r["reefer_status"]))
+                e = dict(ts=new_ts, truck_id=r["truck_id"], shipment_id=r["shipment_id"],
+                         facility_id=r["facility_id"], temp_c=float(r["temp_c"]),
+                         setpoint_c=float(r["setpoint_c"]), door_open=r["door_open"].lower() == "true",
+                         reefer_status=r["reefer_status"])
+                if "latitude" in r:  # fleet/GPS columns (older CSVs don't have them)
+                    e.update(latitude=float(r["latitude"]), longitude=float(r["longitude"]),
+                             speed_kmh=float(r["speed_kmh"]), ignition_on=r["ignition_on"].lower() == "true")
+                events.append(e)
             if a.limit:
                 events = events[: max(0, a.limit - sent)]
             if not events:
