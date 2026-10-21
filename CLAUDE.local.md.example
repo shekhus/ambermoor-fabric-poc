@@ -3,12 +3,12 @@
 
 ## IDs (fill as you create items; GUIDs from the Fabric URL or `fabric` MCP)
 - TENANT_ID:
-- WS_DEV_ID:            (WS-AMBERMOOR-DEV)
-- WS_TEST_ID:           (WS-AMBERMOOR-TEST)
-- WS_APP_ID:            (WS-AMBERMOOR-APP)
-- WS_AGENT_ID:          (WS-AMBERMOOR-AGENT, FT6)
-- LH_AMBERMOOR_ID:
-- SM_AMBERMOOR_OPS_ID:
+- WS_DEV_ID:            (WS-FRESHYFRESH-DEV)
+- WS_TEST_ID:           (WS-FRESHYFRESH-TEST)
+- WS_APP_ID:            (WS-FRESHYFRESH-APP)
+- WS_AGENT_ID:          (WS-FRESHYFRESH-AGENT, FT6)
+- LH_FRESHYFRESH_ID:
+- SM_FRESHYFRESH_OPS_ID:
 - KQL_COLDCHAIN_QUERY_URI:
 - DATA_AGENT_ID:        (FT6)
 

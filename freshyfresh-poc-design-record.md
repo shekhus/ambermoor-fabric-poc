@@ -1,14 +1,14 @@
-# Ambermoor Fresh Ops POC: design record (9 Oct 2026)
+# FreshyFresh Ops POC: design record (9 Oct 2026)
 
-The Claude Code starter kit `ambermoor-fabric-poc.zip` was delivered in chat on 9 Oct 2026. It combines the Fabric App/Rayfin demo and the Fabric Data Agent demo into one storyline for **Ambermoor Fresh Foods**, a *fictional* refrigerated prepared-foods company. All data is synthetic, no real company is represented, and the build is sequenced DP-700 labs first.
+The Claude Code starter kit `ambermoor-fabric-poc.zip` was delivered in chat on 9 Oct 2026. It combines the Fabric App/Rayfin demo and the Fabric Data Agent demo into one storyline for **FreshyFresh Foods**, a *fictional* refrigerated prepared-foods company. All data is synthetic, no real company is represented, and the build is sequenced DP-700 labs first.
 
 ## Re-sequenced 9 Oct (afternoon): App + agent first
-- **Fast track this weekend (Sat 10 – Sun 11 Oct):** Fabric App + "Ask Ambermoor" working end to end before DP-700 labs. Runbook: `docs/fast-track.md`; skill: `/fast-track`.
+- **Fast track this weekend (Sat 10 – Sun 11 Oct):** Fabric App + "Ask FreshyFresh" working end to end before DP-700 labs. Runbook: `docs/fast-track.md`; skill: `/fast-track`.
 - **Agent, in two steps:**
   - FT5: Claude Code on trial via the read-only `tools/fabric_query.py` (ODBC + Entra token for the SQL endpoint; `azure-kusto-data` with az-cli auth for KQL).
   - FT6: a real Fabric Data Agent on a **pay-as-you-go F2 in the same region as the trial**. Shekhar has an Azure subscription in the same tenant.
 - **Agent UX:** the agent sits **next to** the app, not inside it. This avoids app-identity calls that would bypass per-user RLS.
-- **App read path:** the Rayfin `dataapp` template reads `SM_Ambermoor_Ops` via Microsoft's `fabric-app-data` SDK, embedded in the Fabric portal as the signed-in user. The model's RLS applies.
+- **App read path:** the Rayfin `dataapp` template reads `SM_FreshyFresh_Ops` via Microsoft's `fabric-app-data` SDK, embedded in the Fabric portal as the signed-in user. The model's RLS applies.
   - The template ships with `services.data` disabled. Writeback (QualityHold / CorrectiveAction / HoldUpdate) needs it enabled with `dialect: mssql`.
 - **Gold fast-track notebook:**
   - Precomputes `otif`, `is_excursion` and `tor_minutes` on `fact_shipment`.
@@ -24,7 +24,7 @@ The Claude Code starter kit `ambermoor-fabric-poc.zip` was delivered in chat on 
 - **DP-700 layers first**; Fabric App + agent after the exam.
 
 ## Verified constraints (re-check on Learn; Fabric changes monthly)
-- **Fabric Data Agent** (and its MCP endpoint) needs **paid F2+ / P1+**. Trial is blocked (Learn prereq + community threads). The plan is a pay-as-you-go F2 only for `WS-AMBERMOOR-AGENT`, paused when idle.
+- **Fabric Data Agent** (and its MCP endpoint) needs **paid F2+ / P1+**. Trial is blocked (Learn prereq + community threads). The plan is a pay-as-you-go F2 only for `WS-FRESHYFRESH-AGENT`, paused when idle.
 - **Fabric Apps (Rayfin) is Preview.**
   - It works on trial in supported regions and needs the tenant setting *Fabric Apps (preview)*.
   - Rayfin 1.36.2 can't add *new* KQL connectors.
@@ -51,7 +51,7 @@ Cross-checked independently with DuckDB SQL: 9/9 PASS.
 
 ---
 
-# Architecture: Ambermoor Fresh Ops POC
+# Architecture: FreshyFresh Ops POC
 
 Two reference demos combined into one storyline:
 - **Fabric App + Rayfin** (from "Build Your First Microsoft Fabric App with AI"): an app with an analytical read
@@ -64,23 +64,23 @@ Both sit on a DP-700-grade data platform and are built from one cockpit, Claude 
 ```mermaid
 flowchart LR
   subgraph LOCAL["Laptop: VS Code + Claude Code"]
-    GEN["generate_ambermoor_data.py"] --> FILES[("parquet + telemetry CSV<br/>golden_answers.json")]
+    GEN["generate_freshyfresh_data.py"] --> FILES[("parquet + telemetry CSV<br/>golden_answers.json")]
     SIM["reefer_simulator.py"]
     CC["Claude Code"]
   end
-  subgraph DEV["WS-AMBERMOOR-DEV (trial): DP-700 core"]
-    PL{{"PL_Ambermoor_Daily"}} --> NB["NB_01 bronze · NB_02 silver · NB_03 gold"]
-    NB --> LH[("LH_Ambermoor<br/>bronze · silver · gold")]
-    LH --> WH[("WH_Ambermoor<br/>T-SQL + RLS/CLS/DDM")]
-    LH --> SM["SM_Ambermoor_Ops<br/>Direct Lake + RLS"]
-    ES[["ES_ReeferTelemetry"]] --> EH[("EH_Ambermoor / KQL_ColdChain")]
+  subgraph DEV["WS-FRESHYFRESH-DEV (trial): DP-700 core"]
+    PL{{"PL_FreshyFresh_Daily"}} --> NB["NB_01 bronze · NB_02 silver · NB_03 gold"]
+    NB --> LH[("LH_FreshyFresh<br/>bronze · silver · gold")]
+    LH --> WH[("WH_FreshyFresh<br/>T-SQL + RLS/CLS/DDM")]
+    LH --> SM["SM_FreshyFresh_Ops<br/>Direct Lake + RLS"]
+    ES[["ES_ReeferTelemetry"]] --> EH[("EH_FreshyFresh / KQL_ColdChain")]
     EH -. "OneLake availability + shortcut" .-> LH
   end
-  subgraph APPWS["WS-AMBERMOOR-APP (trial): Fabric Apps PREVIEW"]
+  subgraph APPWS["WS-FRESHYFRESH-APP (trial): Fabric Apps PREVIEW"]
     FA["Freshness Command Center<br/>(Rayfin)"] --> SQLDB[("App SQL database<br/>QualityHold · CorrectiveAction · HoldUpdate")]
   end
-  subgraph AGWS["WS-AMBERMOOR-AGENT (paid F2): Phase 3B"]
-    DA["Fabric Data Agent: Ask Ambermoor"]
+  subgraph AGWS["WS-FRESHYFRESH-AGENT (paid F2): Phase 3B"]
+    DA["Fabric Data Agent: Ask FreshyFresh"]
   end
   FILES -->|upload to Files| LH
   FILES -->|Get data| EH
@@ -100,13 +100,13 @@ flowchart LR
 ## Layers
 | Layer | Items | Status | DP-700 |
 |---|---|---|---|
-| Ingest + medallion | LH_Ambermoor, NB_01–03, PL_Ambermoor_Daily, DF_Customer_Master | GA (schema-enabled lakehouse: *verify* status) | D2 |
-| Serving + security | WH_Ambermoor (RLS/CLS/DDM), OneLake security, SM_Ambermoor_Ops (RLS) | OneLake security: *verify* | D1 |
-| Real-time | ES_ReeferTelemetry → EH_Ambermoor, KQL, shortcut, Activator | GA, *verify* Activator | D2/D3 |
+| Ingest + medallion | LH_FreshyFresh, NB_01–03, PL_FreshyFresh_Daily, DF_Customer_Master | GA (schema-enabled lakehouse: *verify* status) | D2 |
+| Serving + security | WH_FreshyFresh (RLS/CLS/DDM), OneLake security, SM_FreshyFresh_Ops (RLS) | OneLake security: *verify* | D1 |
+| Real-time | ES_ReeferTelemetry → EH_FreshyFresh, KQL, shortcut, Activator | GA, *verify* Activator | D2/D3 |
 | CI/CD | Git integration, deployment pipeline DEV→TEST | GA | D1 |
 | Ops | Monitoring hub, Capacity Metrics, OPTIMIZE/V-Order | GA | D3 |
 | App | Fabric App (Rayfin): read model, writeback holds, RLS | **Preview** | — |
-| Agent | Ask Ambermoor: prototype in Claude Code (3A) → Fabric Data Agent + MCP (3B) | Data Agent: *verify* GA/Preview; needs paid F2 | — |
+| Agent | Ask FreshyFresh: prototype in Claude Code (3A) → Fabric Data Agent + MCP (3B) | Data Agent: *verify* GA/Preview; needs paid F2 | — |
 
 ## Design decisions (ADR-lite)
 1. **Trial-first; F2 only for the agent.**
@@ -138,7 +138,7 @@ flowchart LR
      deployment-pipeline rules.
 
 ## Open risks / to verify
-- Can a data agent in `WS-AMBERMOOR-AGENT` (F2) use sources in `WS-AMBERMOOR-DEV` (trial)?
+- Can a data agent in `WS-FRESHYFRESH-AGENT` (F2) use sources in `WS-FRESHYFRESH-DEV` (trial)?
   - If not, temporarily move DEV to the F2 for the demo. F2 is small; expect throttling on Spark.
 - Fabric Apps region availability for your trial capacity region (Learn: apps overview).
 - Claude Code `.mcp.json` resolution when launched from `app/` inside the repo (see setup.md).

@@ -1,10 +1,10 @@
 ---
-name: ask-ambermoor
-description: Act as the "Ask Ambermoor" data agent prototype - answer business questions about the synthetic Ambermoor data (recalls, lot traceability, cold chain, truck location, dock wait, trip cost, waste, OTIF, sales) with T-SQL or KQL, run the golden-answer eval, or export the agent config for a Fabric Data Agent. Use for natural-language data questions in this repo or "/ask-ambermoor eval".
+name: ask-freshyfresh
+description: Act as the "Ask FreshyFresh" data agent prototype - answer business questions about the synthetic FreshyFresh data (recalls, lot traceability, cold chain, truck location, dock wait, trip cost, waste, OTIF, sales) with T-SQL or KQL, run the golden-answer eval, or export the agent config for a Fabric Data Agent. Use for natural-language data questions in this repo or "/ask-freshyfresh eval".
 argument-hint: "[question | eval | export]"
 ---
 
-# Ask Ambermoor: agent prototype (runtime-agnostic)
+# Ask FreshyFresh: agent prototype (runtime-agnostic)
 
 Request: $ARGUMENTS
 
@@ -19,10 +19,10 @@ the same artefacts you would paste or import into a Fabric Data Agent, so prompt
    - telemetry: temperature, live truck position → KQL
 2. Write the query: T-SQL for the Fabric SQL analytics endpoint / Warehouse, or KQL. Reuse the few-shot patterns.
 3. Execute it through the best available path, and **say which one you used**:
-   - a. `ambermoor-agent` MCP connected (FT6, paid F2): ask the published Fabric Data Agent the same question.
+   - a. `freshyfresh-agent` MCP connected (FT6, paid F2): ask the published Fabric Data Agent the same question.
      Compare its answer and generated query with yours.
    - b. **Live Fabric via `tools/fabric_query.py`** (FT5, works on trial; read-only):
-     - T-SQL: `python tools/fabric_query.py sql "<query>"` against the LH_Ambermoor SQL analytics endpoint.
+     - T-SQL: `python tools/fabric_query.py sql "<query>"` against the LH_FreshyFresh SQL analytics endpoint.
      - KQL: `python tools/fabric_query.py kql "<query>"` against KQL_ColdChain.
      - It needs `fabric.endpoints.json` and `az login`.
    - c. Optional Preview MCPs, if Shekhar has connected them: the Fabric Data Warehouse or Eventhouse remote MCP.
@@ -56,7 +56,7 @@ Check that the artefacts are ready for a Fabric Data Agent:
 - The agent description (top of `agent/instructions.md`) is specific. When the agent is published, this
   description becomes the MCP tool description that clients use for routing.
 
-Then list the manual steps from `docs/specs/agent-ask-ambermoor.md` §Publish.
+Then list the manual steps from `docs/specs/agent-ask-freshyfresh.md` §Publish.
 
 ## Guardrails
 - The data is synthetic. Still, phrase recall and food-safety answers as "in-scope per the data". Never present a

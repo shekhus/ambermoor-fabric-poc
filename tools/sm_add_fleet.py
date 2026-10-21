@@ -1,4 +1,4 @@
-"""Add the fleet extension (SM_Ambermoor_Ops.md section 6) to a downloaded SM_Ambermoor_Ops TMDL definition.
+"""Add the fleet extension (SM_FreshyFresh_Ops.md section 6) to a downloaded SM_FreshyFresh_Ops TMDL definition.
 
     python tools/sm_definition.py get --workspace <ws> --model <id> --out build/sm_fleet          # read-only
     python tools/sm_add_fleet.py --src build/sm_fleet --schema build/fleet_schema.json             # local edit only
@@ -74,7 +74,7 @@ def main():
     defn = Path(a.src) / "definition"
     schema = json.loads(Path(a.schema).read_text(encoding="utf-8"))
 
-    # reuse the Direct Lake expression the portal created (e.g. 'DirectLake - LH_Ambermoor')
+    # reuse the Direct Lake expression the portal created (e.g. 'DirectLake - LH_FreshyFresh')
     expr = re.search(r"^expression\s+('[^']+'|\S+)\s*=", (defn / "expressions.tmdl").read_text(encoding="utf-8"), re.M)
     if not expr:
         raise SystemExit("no Direct Lake expression found in expressions.tmdl")

@@ -1,10 +1,10 @@
-# NB_01_load_bronze: land Ambermoor parquet files as bronze Delta tables            [D2]
+# NB_01_load_bronze: land FreshyFresh parquet files as bronze Delta tables            [D2]
 # -----------------------------------------------------------------------------------
-# How to use: create a Fabric notebook "NB_01_load_bronze", attach LH_Ambermoor as the DEFAULT lakehouse,
+# How to use: create a Fabric notebook "NB_01_load_bronze", attach LH_FreshyFresh as the DEFAULT lakehouse,
 # and paste each "# %%" block into its own cell. Mark the first cell as a parameter cell (lab L2 passes
-# parameters from PL_Ambermoor_Daily).
+# parameters from PL_FreshyFresh_Daily).
 #
-# Prereq (lab L1): the 19 files from data/generated/*.parquet uploaded to LH_Ambermoor -> Files/landing/ambermoor/
+# Prereq (lab L1): the 19 files from data/generated/*.parquet uploaded to LH_FreshyFresh -> Files/landing/ambermoor/
 # Databricks analogue: Auto Loader / COPY INTO from a Volume into a bronze Delta table. Here it's a plain batch
 # read from the lakehouse Files area.
 # Verify on Learn: schema-enabled lakehouse status, and whether CREATE SCHEMA via Spark SQL is supported in your

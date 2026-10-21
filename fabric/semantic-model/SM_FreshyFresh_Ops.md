@@ -1,6 +1,6 @@
-# SM_Ambermoor_Ops: Direct Lake semantic model (fast track FT3)                [D1]
+# SM_FreshyFresh_Ops: Direct Lake semantic model (fast track FT3)                [D1]
 
-Built on `LH_Ambermoor` **gold** after `NB_03_gold_fasttrack`. One model serves three consumers:
+Built on `LH_FreshyFresh` **gold** after `NB_03_gold_fasttrack`. One model serves three consumers:
 the Fabric App (via the template's `fabric-app-data` SDK), the Fabric Data Agent, and Power BI.
 DAX below was written against this exact gold schema but **has not been executed in a model yet**.
 Run the validation queries at the end before building UI on it.
@@ -9,7 +9,7 @@ Databricks analogue: a Unity Catalog metric view / AI/BI dataset, but with **Dir
 directly, no import refresh) and model-level **RLS**.
 
 ## 1. Create
-1. Lakehouse `LH_Ambermoor` → **New semantic model**. Name it `SM_Ambermoor_Ops` and pick these `gold` tables:
+1. Lakehouse `LH_FreshyFresh` → **New semantic model**. Name it `SM_FreshyFresh_Ops` and pick these `gold` tables:
    - Dims: `dim_facility`, `dim_product`, `dim_customer`, `dim_date`
    - Facts: `fact_order_line`, `fact_shipment`, `fact_lot`, `fact_waste`, `fact_inventory_daily`, `trace_genealogy`
 2. The UI may offer Direct Lake on OneLake vs on SQL endpoint. Default is fine for the POC. *Verify* the current
@@ -60,7 +60,7 @@ Format: percentages as `0.0%`, revenue as currency, cases as whole numbers.
     and re-run it.
 - Role **Ops Director**: no filter (`TRUE()`). With roles defined, a Read-only user must be in a role to see data.
 - Add members under the model's **Security** page.
-- **Test users must NOT be Contributor/Member/Admin on `WS-AMBERMOOR-DEV`.** Those roles bypass RLS.
+- **Test users must NOT be Contributor/Member/Admin on `WS-FRESHYFRESH-DEV`.** Those roles bypass RLS.
   Give them **Read + Build** on the semantic model only. The app's DAX queries go through the semantic-model query
   API, which needs Build.
 - **Direct Lake identity.** For model-only consumers, bind the model's OneLake connection to a **fixed identity**

@@ -7,8 +7,8 @@ import { BLOCKED_TABLES, MODEL_CONTEXT } from './model-context.js';
 export type AskAnswer = { title: string; explanation: string; dax: string };
 
 // Only the question, the model's names/measures (MODEL_CONTEXT) and a previous DAX error are sent to Claude.
-// Query results never leave Fabric: the browser runs the DAX against SM_Ambermoor_Ops.
-const SYSTEM = `You write one DAX query against the Power BI semantic model SM_Ambermoor_Ops for Ambermoor Fresh Foods,
+// Query results never leave Fabric: the browser runs the DAX against SM_FreshyFresh_Ops.
+const SYSTEM = `You write one DAX query against the Power BI semantic model SM_FreshyFresh_Ops for FreshyFresh Foods,
 a fictional refrigerated prepared-foods maker (all data is synthetic, Jul-Sep 2026, timestamps in UTC).
 The app runs your query as the signed-in user, with row-level security: a plant QA manager only sees their plant, so
 never filter by user or try to bypass security. The result is shown as a table, so return readable columns.
@@ -81,7 +81,7 @@ export async function answerQuestion(
   if (!text || text.type !== 'text') throw new Error('No answer came back. Try again.');
   const answer = JSON.parse(text.text) as AskAnswer;
 
-  console.log(`askAmbermoor: ${q.length} chars, ${response.usage.input_tokens} in / ${response.usage.output_tokens} out, `
+  console.log(`askFreshyFresh: ${q.length} chars, ${response.usage.input_tokens} in / ${response.usage.output_tokens} out, `
     + `cache read ${response.usage.cache_read_input_tokens ?? 0}`);
   if (answer.dax) {
     const problem = checkDax(answer.dax);

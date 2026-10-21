@@ -1,6 +1,6 @@
 ---
 name: fast-track
-description: Drive the weekend fast track that gets the Ambermoor Fabric App and the "Ask Ambermoor" agent working (FT0-FT6) - prep, data load, Eventhouse, semantic model, Claude Code agent, Fabric App, Fabric Data Agent on F2. Use when Shekhar says "fast track", "next step", "FT<n>", or asks how to get the app/agent running.
+description: Drive the weekend fast track that gets the FreshyFresh Fabric App and the "Ask FreshyFresh" agent working (FT0-FT6) - prep, data load, Eventhouse, semantic model, Claude Code agent, Fabric App, Fabric Data Agent on F2. Use when Shekhar says "fast track", "next step", "FT<n>", or asks how to get the app/agent running.
 argument-hint: "[FT0..FT6 | next | status]"
 ---
 
@@ -11,7 +11,7 @@ With `status`, report what's ticked, what's blocked and why.
 
 ## Procedure
 1. **Prepare.**
-   - Read the step in `docs/fast-track.md`. For FT3 also read `fabric/semantic-model/SM_Ambermoor_Ops.md`.
+   - Read the step in `docs/fast-track.md`. For FT3 also read `fabric/semantic-model/SM_FreshyFresh_Ops.md`.
      For FT4 also read `docs/specs/app-command-center.md`.
    - Check prerequisites from earlier steps. If one is missing, say so and stop.
 2. **Split the work into 🤖 and 🖱️.**

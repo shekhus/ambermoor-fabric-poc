@@ -33,7 +33,7 @@ def main():
 
     wh = Path(a.warehouse).resolve()
     shutil.rmtree(wh, ignore_errors=True)
-    spark = (SparkSession.builder.master("local[2]").appName("ambermoor-local")
+    spark = (SparkSession.builder.master("local[2]").appName("freshyfresh-local")
              .config("spark.sql.warehouse.dir", str(wh))
              .config("spark.sql.session.timeZone", "UTC")
              .config("spark.ui.enabled", "false")

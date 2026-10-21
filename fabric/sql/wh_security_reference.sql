@@ -1,7 +1,7 @@
-/* WH_Ambermoor: security reference for lab L5                                     [D1]
+/* WH_FreshyFresh: security reference for lab L5                                     [D1]
    REFERENCE SOLUTION. Try the lab first; use this to check your work.
 
-   Assumes lab L4 created dbo.dim_facility, dbo.dim_customer, dbo.fact_shipment in WH_Ambermoor (CTAS from the
+   Assumes lab L4 created dbo.dim_facility, dbo.dim_customer, dbo.fact_shipment in WH_FreshyFresh (CTAS from the
    lakehouse gold layer, same column names as docs/data-model.md).
    Replace the UPNs with your two test users. Test as those users (Viewer + warehouse Read), not as yourself.
    Verify on Learn: which workspace roles bypass RLS/CLS/DDM in a Fabric Warehouse; supported data types (VARCHAR).

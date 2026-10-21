@@ -1,9 +1,9 @@
 # Copy to fabric.yaml (gitignored), or run:
-#   npx fabric-app-data add semanticModel ambermoor --workspace <WS_AMBERMOOR_DEV_ID> --item <SM_AMBERMOOR_OPS_ID>
+#   npx fabric-app-data add semanticModel ambermoor --workspace <WS_FRESHYFRESH_DEV_ID> --item <SM_FRESHYFRESH_OPS_ID>
 activeProfile: default
 profiles:
   default:
     semanticModels:
       ambermoor:
-        workspaceId: <WS_AMBERMOOR_DEV_ID>
-        itemId: <SM_AMBERMOOR_OPS_ID>
+        workspaceId: <WS_FRESHYFRESH_DEV_ID>
+        itemId: <SM_FRESHYFRESH_OPS_ID>

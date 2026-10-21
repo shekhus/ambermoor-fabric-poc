@@ -1,4 +1,4 @@
-// RTD_Ambermoor_Fleet: tile queries for a Real-Time Dashboard on KQL_ColdChain                  [D2/D3]
+// RTD_FreshyFresh_Fleet: tile queries for a Real-Time Dashboard on KQL_ColdChain                  [D2/D3]
 // One query per tile. Prereq: coldchain.kql blocks 1 and 7 (table with GPS columns + TruckLatestPosition()).
 // Click-path and visual settings: docs/specs/fleet-trucks.md section 3.
 // Databricks analogue: an AI/BI dashboard on a streaming table, but here every tile re-runs KQL on an auto-refresh.

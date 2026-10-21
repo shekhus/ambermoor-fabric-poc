@@ -1,7 +1,7 @@
 import type { RayfinClient } from "@microsoft/rayfin-client";
 
 import { getRayfinClient } from "@/lib/rayfin-client";
-import type { AmbermoorAppSchema } from "../../rayfin/data/schema";
+import type { FreshyFreshAppSchema } from "../../rayfin/data/schema";
 
 // Writeback to the app's Fabric SQL database through Rayfin entities (rayfin/data/*.ts).
 // Lists use .first(500).execute(): fine for the POC's volumes. Switch to executePaginated() before real use.
@@ -42,8 +42,8 @@ export interface ActionRow {
     root_cause_category: RootCause;
 }
 
-function client(): RayfinClient<AmbermoorAppSchema> {
-    return getRayfinClient() as unknown as RayfinClient<AmbermoorAppSchema>;
+function client(): RayfinClient<FreshyFreshAppSchema> {
+    return getRayfinClient() as unknown as RayfinClient<FreshyFreshAppSchema>;
 }
 
 export function currentUser(): string {

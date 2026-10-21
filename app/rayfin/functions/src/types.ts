@@ -17,7 +17,7 @@
  */
 
 export type AppFunctionsSchema = {
-  askAmbermoor: {
+  askFreshyFresh: {
     input: { question: string; previousDax: string; previousError: string };
     output: { title: string; explanation: string; dax: string };
   };

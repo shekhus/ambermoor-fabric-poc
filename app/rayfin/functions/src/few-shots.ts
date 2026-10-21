@@ -1,4 +1,4 @@
-// Question -> DAX examples for the Ask function. Each one was run against the live SM_Ambermoor_Ops (21 Oct 2026)
+// Question -> DAX examples for the Ask function. Each one was run against the live SM_FreshyFresh_Ops (21 Oct 2026)
 // and matches agent/golden_answers.json where a golden answer exists. Keep them RLS-safe: no BLOCKED_TABLES.
 export const FEW_SHOTS: ReadonlyArray<{ question: string; dax: string }> = [
     {

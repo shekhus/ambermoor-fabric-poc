@@ -1,6 +1,6 @@
 {
   "sql_server": "<guid>.datawarehouse.fabric.microsoft.com",
-  "sql_database": "LH_Ambermoor",
+  "sql_database": "LH_FreshyFresh",
   "kql_query_uri": "https://<eventhouse-host>.kusto.fabric.microsoft.com",
   "kql_database": "KQL_ColdChain",
   "odbc_driver": "ODBC Driver 18 for SQL Server"

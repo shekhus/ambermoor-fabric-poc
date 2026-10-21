@@ -1,4 +1,4 @@
-# Spec: Ambermoor Freshness Command Center (Fabric App, Rayfin `dataapp` template), **Preview**
+# Spec: FreshyFresh Command Center (Fabric App, Rayfin `dataapp` template), **Preview**
 
 Hand this to Claude Code **from `app/`**:
 > Implement ../docs/specs/app-command-center.md. Page 1 first. Validate each visual with npm run validate:visual
@@ -17,7 +17,7 @@ A supplier notice lands on 15 Sep: onion lot `ILOT-P02-ING02-20260908`.
 
 ## Architecture (as scaffolded by the template)
 - **Read.** Microsoft's `fabric-app-data` SDK through the template's `useSemanticModelQuery` hook queries
-  `SM_Ambermoor_Ops` (alias `ambermoor`).
+  `SM_FreshyFresh_Ops` (alias `ambermoor`).
   - The app runs embedded in the Fabric portal as the signed-in user, so the **model's RLS applies**.
   - All reads come from the model, including lot trace via `trace_genealogy`. One security model, one source.
 - **Write.** Rayfin entities in the app's Fabric SQL database. Enable `services.data` with `dialect: mssql`; the
@@ -32,7 +32,7 @@ A supplier notice lands on 15 Sep: onion lot `ILOT-P02-ING02-20260908`.
 | Ops director | All facilities, via model role **Ops Director** | Read all; update status of any |
 
 ## Pages
-1. **Plant pulse.** Measures from `fabric/semantic-model/SM_Ambermoor_Ops.md`.
+1. **Plant pulse.** Measures from `fabric/semantic-model/SM_FreshyFresh_Ops.md`.
    - KPI tiles: Cases Produced, Waste Rate %, OTIF %, Fill Rate %, Excursion Shipments, Open Holds (from app data).
    - Waste Rate % by month (line) vs network. Top 5 waste SKUs by reason (bar).
    - On Time % heatmap: requested weekday × channel. It should make the P07 Monday Foodservice dip visible.

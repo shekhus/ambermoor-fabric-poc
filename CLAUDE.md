@@ -1,15 +1,15 @@
-# Ambermoor Fresh Ops — Microsoft Fabric POC
+# FreshyFresh Ops — Microsoft Fabric POC
 
 ## Mission (priority order)
 1. **Fast track (Sat 10 – Sun 11 Oct 2026).** Get the Fabric App (freshness & food-safety command center with
-   writeback) and the "Ask Ambermoor" agent working end to end.
+   writeback) and the "Ask FreshyFresh" agent working end to end.
    - Runbook: `docs/fast-track.md`; drive it with `/fast-track`.
    - Agent: Claude Code on trial first (FT5), then a real Fabric Data Agent on a paid F2 (FT6).
 2. **DP-700 readiness.** Shekhar sits DP-700 before the client kickoff (~early Nov 2026). Labs resume after the
    fast track.
 3. **Reusable implementation patterns.** Medallion, orchestration, governance, CI/CD for the client engagement.
 
-Company: **Ambermoor Fresh Foods**, a *fictional* refrigerated prepared-foods maker. Products: deli salads,
+Company: **FreshyFresh Foods**, a *fictional* refrigerated prepared-foods maker. Products: deli salads,
 sides, dips, entrees, Mexican foods & tortillas, desserts, cut potatoes. Channels: retail + foodservice,
 US/MX/CA. **All data is synthetic.** Never use real company or client data, brands, logos, plants, customers or
 incidents. Never name real companies in demo content.
@@ -37,47 +37,47 @@ incidents. Never name real companies in demo content.
 ## Environment
 - Tenant: Shekhar's own. Capacity: **Fabric trial** (time-limited; check remaining days in the Fabric portal).
 - Workspaces:
-  - `WS-AMBERMOOR-DEV`, `WS-AMBERMOOR-TEST` (deployment pipeline), `WS-AMBERMOOR-APP` (Fabric App): trial capacity.
-  - `WS-AMBERMOOR-AGENT`: FT6 only, on a **paid F2** capacity in the **same region as the trial**. Fabric Data
+  - `WS-FRESHYFRESH-DEV`, `WS-FRESHYFRESH-TEST` (deployment pipeline), `WS-FRESHYFRESH-APP` (Fabric App): trial capacity.
+  - `WS-FRESHYFRESH-AGENT`: FT6 only, on a **paid F2** capacity in the **same region as the trial**. Fabric Data
     Agents don't run on trial. Pause the F2 when idle.
 - DEV items:
-  - Lakehouse `LH_Ambermoor`, schema-enabled: `bronze` / `silver` / `gold`
-  - Warehouse `WH_Ambermoor`
-  - Semantic model `SM_Ambermoor_Ops` (Direct Lake on `gold`)
-  - Eventhouse `EH_Ambermoor`, KQL DB `KQL_ColdChain`, table `ReeferTelemetry`
+  - Lakehouse `LH_FreshyFresh`, schema-enabled: `bronze` / `silver` / `gold`
+  - Warehouse `WH_FreshyFresh`
+  - Semantic model `SM_FreshyFresh_Ops` (Direct Lake on `gold`)
+  - Eventhouse `EH_FreshyFresh`, KQL DB `KQL_ColdChain`, table `ReeferTelemetry`
   - Eventstream `ES_ReeferTelemetry`
-  - Pipeline `PL_Ambermoor_Daily`, Dataflow Gen2 `DF_Customer_Master`
+  - Pipeline `PL_FreshyFresh_Daily`, Dataflow Gen2 `DF_Customer_Master`
   - Notebooks `NB_01_load_bronze`, `NB_03_gold_fasttrack` (fast track); `NB_02_silver`, `NB_03_gold` (lab L3)
   - Gold extras for app/agent: `trace_genealogy` mart; `fact_shipment` has `otif`, `is_excursion`, `tor_minutes`
   - Fleet slice: `dim_truck`, gold `fact_trip` (dock wait, trip cost); GPS columns on `ReeferTelemetry`;
-    dashboard `RTD_Ambermoor_Fleet` (spec: `docs/specs/fleet-trucks.md`)
+    dashboard `RTD_FreshyFresh_Fleet` (spec: `docs/specs/fleet-trucks.md`)
 - IDs (workspace/item GUIDs) live in `CLAUDE.local.md` (gitignored). Ask if missing. Never hard-code them in committed files.
 
 ## Two cockpits: where to launch Claude Code
 | Work | Launch from | MCP servers |
 |---|---|---|
-| Data platform, labs, docs, Ask Ambermoor | repo root | `fabric`, `microsoft-learn` (+ `ambermoor-agent` after FT6) |
+| Data platform, labs, docs, Ask FreshyFresh | repo root | `fabric`, `microsoft-learn` (+ `freshyfresh-agent` after FT6) |
 | Fabric App (FT4) | `app/` | `rayfin` (written by Rayfin into `app/.mcp.json`; must run from the Rayfin project root) |
 
 - The app uses the Rayfin `dataapp` template:
-  - Reads: Microsoft's `fabric-app-data` SDK queries `SM_Ambermoor_Ops` as the signed-in user.
+  - Reads: Microsoft's `fabric-app-data` SDK queries `SM_FreshyFresh_Ops` as the signed-in user.
   - Writes: Rayfin entities.
 - Claude Code does not read `app/.agents/skills/`. Use the `rayfin-app` skill, which points you to those files.
 
 ## Repo map
 - `tools/`
-  - `generate_ambermoor_data.py`: synthetic data + `golden_answers.json`
+  - `generate_freshyfresh_data.py`: synthetic data + `golden_answers.json`
   - `verify_golden.py`: DuckDB cross-check
   - `reefer_simulator.py`: Eventstream replay
   - `fabric-token-header.mjs`: bearer token for the data agent MCP
-  - `fabric_query.py`: **read-only** T-SQL/KQL against live Fabric (Ask Ambermoor on trial)
+  - `fabric_query.py`: **read-only** T-SQL/KQL against live Fabric (Ask FreshyFresh on trial)
   - `run_notebooks_local.py`: run the notebooks with local PySpark before using capacity
 - `fabric/`
   - `notebooks/`: PySpark source, `.py`
   - `kql/`: Eventhouse queries
   - `sql/`: Warehouse T-SQL
   - `semantic-model/`: model spec, DAX measures, RLS, validation queries
-- `agent/`: Ask Ambermoor instructions, few-shot JSON in Fabric Data Agent import format, golden answers
+- `agent/`: Ask FreshyFresh instructions, few-shot JSON in Fabric Data Agent import format, golden answers
 - `docs/`:
   - `setup.md`, `architecture.md`, `phase-plan.md` (status lives here)
   - `data-model.md`: the data contract
@@ -90,7 +90,7 @@ incidents. Never name real companies in demo content.
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python tools/generate_ambermoor_data.py --out data/generated --seed 42   # ~35 s, deterministic
+python tools/generate_freshyfresh_data.py --out data/generated --seed 42   # ~35 s, deterministic
 python tools/verify_golden.py --data data/generated                   # must print all PASS
 python tools/run_notebooks_local.py --data data/generated              # optional: Java 17+ and pyspark
 python tools/fabric_query.py sql "SELECT TOP 5 * FROM gold.dim_facility" --format table   # needs fabric.endpoints.json
@@ -104,7 +104,7 @@ claude mcp list                                                       # check se
   1. a one-line plan,
   2. Shekhar's explicit OK in this session.
 - Never delete workspaces, lakehouses, warehouses or capacities. Never use `rayfin up --force`.
-- Target `WS-AMBERMOOR-DEV` unless told otherwise. State the target workspace before every write.
+- Target `WS-FRESHYFRESH-DEV` unless told otherwise. State the target workspace before every write.
 - Never print, log or commit tokens, connection strings, `.env`, `CLAUDE.local.md` or `rayfin/.deployments.json`.
 - Data agent and Fabric MCP answers may leave Fabric's compliance boundary. Synthetic data only.
 

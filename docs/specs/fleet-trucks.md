@@ -12,15 +12,15 @@ byte-identical. Checked by diffing a pre-change run against a post-change run.
 
 | Layer | Change | File |
 |---|---|---|
-| Generator | `dim_facility` + `latitude`, `longitude`; `dim_customer` + `latitude`, `longitude`, `route_km`; new `dim_truck` (48 trucks, cost rates); `fact_shipment` + `departed_ts`; `reefer_telemetry` + `latitude`, `longitude`, `speed_kmh`, `ignition_on` | `tools/generate_ambermoor_data.py` |
+| Generator | `dim_facility` + `latitude`, `longitude`; `dim_customer` + `latitude`, `longitude`, `route_km`; new `dim_truck` (48 trucks, cost rates); `fact_shipment` + `departed_ts`; `reefer_telemetry` + `latitude`, `longitude`, `speed_kmh`, `ignition_on` | `tools/generate_freshyfresh_data.py` |
 | Golden answers | **Q9** dock wait at P07, **Q10** trip cost | `agent/golden_answers.json` |
 | Cross-check | DuckDB re-computes Q9/Q10 (14 checks, all PASS) | `tools/verify_golden.py` |
 | Bronze | `dim_truck` added (19 files) | `fabric/notebooks/nb_01_load_bronze.py` |
 | Gold | `dim_truck` pass-through; new **`fact_trip`** (one row per shipment); Q9/Q10 acceptance checks | `fabric/notebooks/nb_03_gold_fasttrack.py` |
 | Eventhouse | Table gets 4 GPS columns (`.create-merge`); `TruckLatestPosition()` function; Activator query; GPS dock dwell; breadcrumb trail | `fabric/kql/coldchain.kql` (blocks 1, 7–11) |
-| Dashboard | 7 tile queries for `RTD_Ambermoor_Fleet` | `fabric/kql/fleet_dashboard.kql` |
+| Dashboard | 7 tile queries for `RTD_FreshyFresh_Fleet` | `fabric/kql/fleet_dashboard.kql` |
 | Stream replay | Passes the GPS fields through | `tools/reefer_simulator.py` |
-| Model | Proposed `fact_trip` / `dim_truck` relationships, 6 measures, validation queries E–F | `fabric/semantic-model/SM_Ambermoor_Ops.md` §6 |
+| Model | Proposed `fact_trip` / `dim_truck` relationships, 6 measures, validation queries E–F | `fabric/semantic-model/SM_FreshyFresh_Ops.md` §6 |
 | Agent | Source notes, rules 9–10 (dock wait, trip cost), 3 KQL + 3 T-SQL few-shots | `agent/instructions.md`, `agent/fewshots_*.json` |
 
 **Storylines**
@@ -36,15 +36,15 @@ byte-identical. Checked by diffing a pre-change run against a post-change run.
 ## 2. Run order
 Local, no capacity used:
 ```bash
-python tools/generate_ambermoor_data.py --out data/generated --seed 42
+python tools/generate_freshyfresh_data.py --out data/generated --seed 42
 python tools/verify_golden.py --data data/generated          # 14 × PASS
 python tools/reefer_simulator.py --dry-run --limit 5          # events now carry latitude/longitude/speed_kmh/ignition_on
 ```
 The notebooks were not run locally (no Java/PySpark on this machine). The `fact_trip` logic in NB_03 matches the
 DuckDB check, but its first real run is in Fabric.
 
-Fabric. Each step is a write, so it needs a one-line plan and Shekhar's OK. Target: `WS-AMBERMOOR-DEV`.
-1. Re-upload the 19 parquet files to `LH_Ambermoor` → `Files/landing/ambermoor/`. Re-run `NB_01_load_bronze`, then
+Fabric. Each step is a write, so it needs a one-line plan and Shekhar's OK. Target: `WS-FRESHYFRESH-DEV`.
+1. Re-upload the 19 parquet files to `LH_FreshyFresh` → `Files/landing/ambermoor/`. Re-run `NB_01_load_bronze`, then
    `NB_03_gold_fasttrack`, and expect all acceptance checks PASS. **[D2]**
 2. Eventhouse (this is FT2, still open):
    - Run block 1 of `coldchain.kql`.
@@ -55,7 +55,7 @@ Fabric. Each step is a write, so it needs a one-line plan and Shekhar's OK. Targ
 3. Create the Real-Time Dashboard (§3). **[D2]**
 4. Activator rule (§3.3). **[D3]**
 5. Semantic model §6 + Fleet report page. **[D1]**
-6. Agent: re-run `/ask-ambermoor eval` for Q1–Q10.
+6. Agent: re-run `/ask-freshyfresh eval` for Q1–Q10.
 
 **Timing:** `docs/phase-plan.md` reserves ~29 Oct – 2 Nov for exam revision with no new builds. Do steps 1–3 (~3 h)
 before 28 Oct, or right after the exam if the client meeting falls later.
@@ -68,14 +68,14 @@ flowchart LR
   SIM[reefer_simulator.py<br/>GPS + temp every 15 min] --> ES[Eventstream<br/>ES_ReeferTelemetry]
   ES --> EH[(Eventhouse<br/>ReeferTelemetry)]
   EH --> FN[TruckLatestPosition&#40;&#41;<br/>arg_max per truck]
-  FN --> RTD[Real-Time Dashboard<br/>RTD_Ambermoor_Fleet]
+  FN --> RTD[Real-Time Dashboard<br/>RTD_FreshyFresh_Fleet]
   FN --> ACT[Activator<br/>warm load on moving truck]
   GEN[generator files] --> BR[bronze] --> GD[gold.fact_trip<br/>dock wait, drive, cost]
-  GD --> SM[SM_Ambermoor_Ops<br/>Direct Lake] --> PBI[Power BI / Fabric App<br/>Fleet & freight page]
+  GD --> SM[SM_FreshyFresh_Ops<br/>Direct Lake] --> PBI[Power BI / Fabric App<br/>Fleet & freight page]
   EH -. OneLake availability .-> BR
 ```
 
-### 3.1 Hot path: Real-Time Dashboard `RTD_Ambermoor_Fleet` (live; KQL)
+### 3.1 Hot path: Real-Time Dashboard `RTD_FreshyFresh_Fleet` (live; KQL)
 The Real-Time Dashboard **Map** visual is listed among supported visuals on Learn with no Preview label (status per
 Learn wording, Oct 2026).
 - Click-path: workspace → **New item → Real-Time Dashboard** → add data source `KQL_ColdChain` → **Manage →
@@ -97,7 +97,7 @@ Learn wording, Oct 2026).
   built-in Map visual is enough for the demo.
 
 ### 3.2 Cold path: "Fleet & freight" page (history; DAX on Direct Lake)
-Build it as a Power BI report page on `SM_Ambermoor_Ops` (after §6 of the model spec), or as a 4th page of the Fabric
+Build it as a Power BI report page on `SM_FreshyFresh_Ops` (after §6 of the model spec), or as a 4th page of the Fabric
 App (`app/` cockpit, `rayfin-app` skill).
 - KPI cards: Trip Cost, Freight Cost per Case, Avg Dock Wait (h), Dock-Delayed Late Trips.
 - Bar: top 10 lanes by Trip Cost (Q10).
@@ -113,18 +113,18 @@ KQL Querysets").
 
 ## 4. Bringing the two POCs together
 Yes. They are two halves of one story:
-- **Ambermoor** is the *what*: a Fabric platform with data, golden answers and business rules.
+- **FreshyFresh** is the *what*: a Fabric platform with data, golden answers and business rules.
 - **Agentic CI/CD** is the *how*: AI agents extend that platform through tickets, PRs, review and a human merge gate.
 
 Put the agents to work on this repo instead of building a second, empty platform.
 
-| Agentic CI/CD needs | Ambermoor already has | Add |
+| Agentic CI/CD needs | FreshyFresh already has | Add |
 |---|---|---|
 | A source system | Generator files in `Files/landing` | A telematics "daily export" source: CSV drop or the Azure SQL free offer (verify current terms) |
 | Metadata-driven bronze framework | `NB_01` hard-coded `tables` list | Move the list to `fabric/metadata/sources.json` (name, path, format, PK). An onboarding ticket then edits a row, not code. |
 | Agent onboarding / wiki | `CLAUDE.md`, `docs/data-model.md`, skills | `AGENTS.md` pointing to the same files (Codex reads AGENTS.md) |
 | Tests the reviewer can trust | `verify_golden.py`, NB acceptance cells, golden Q1–Q10 | Run `generate` + `verify_golden` in the PR pipeline |
-| Feature workspaces | `WS-AMBERMOOR-DEV` only | Fabric Git integration branch-out to a feature workspace; check GitHub vs Azure DevOps support and SPN auth on Learn |
+| Feature workspaces | `WS-FRESHYFRESH-DEV` only | Fabric Git integration branch-out to a feature workspace; check GitHub vs Azure DevOps support and SPN auth on Learn |
 | Review checklist | Data-contract and naming rules in `CLAUDE.md` | Checklist: contract updated, golden PASS, prefixes, no secrets, GA/Preview labels |
 | Human merge gate | — | Branch policy: only Shekhar can complete the PR |
 
@@ -148,9 +148,9 @@ AGENTS.md (small). Then the agent loop, once the agentic POC is approved.
 
 ### 4.1 Decision (21 Oct 2026): one project, one business UI, a separate delivery track
 **Shared (one of each):**
-- **Platform**: lakehouse, Eventhouse, `SM_Ambermoor_Ops`, golden answers. The agents work on this platform, not on a
+- **Platform**: lakehouse, Eventhouse, `SM_FreshyFresh_Ops`, golden answers. The agents work on this platform, not on a
   copy of it.
-- **Business UI**: the Fabric App gets a "Fleet & freight" page (cold path, DAX). `RTD_Ambermoor_Fleet` holds the live
+- **Business UI**: the Fabric App gets a "Fleet & freight" page (cold path, DAX). `RTD_FreshyFresh_Fleet` holds the live
   map (hot path, KQL). The app links to the dashboard. Embedding a Real-Time Dashboard inside a Fabric App is
   **status unverified**.
 - **Repo and data contract**: agent tickets and PRs change this codebase. `verify_golden.py` is the merge gate's test.
@@ -160,7 +160,7 @@ AGENTS.md (small). Then the agent loop, once the agentic POC is approved.
   own.
 - **Approval and budget**: the agentic POC is approved on its own. The fleet slice doesn't wait for it.
 - **Identity and blast radius**: the agents run as service principals and work only in feature workspaces branched
-  from `WS-AMBERMOOR-DEV`. They never touch `WS-AMBERMOOR-APP`. Changes reach the app only through the deployment
+  from `WS-FRESHYFRESH-DEV`. They never touch `WS-FRESHYFRESH-APP`. Changes reach the app only through the deployment
   pipeline after a human merge.
 - **Optional, later**: a "delivery metrics" page (ticket lead time, PRs per agent, review findings, agent spend), to
   make the business case. Not needed for the first demo.

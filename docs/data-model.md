@@ -1,9 +1,9 @@
-# Data contract: Ambermoor Fresh Ops (synthetic)
+# Data contract: FreshyFresh Ops (synthetic)
 
-**Generator:** `tools/generate_ambermoor_data.py` (seed 42, window 2026-07-01 → 2026-09-28, UTC).
+**Generator:** `tools/generate_freshyfresh_data.py` (seed 42, window 2026-07-01 → 2026-09-28, UTC).
 
 Everything is fictional. Plant names, brands (Homestyle Kitchen, Bistro Select, Casa Fresca, Harvest Table),
-customers, suppliers, shelf lives and prices are placeholders, **not** any real company's data. Ambermoor Fresh
+customers, suppliers, shelf lives and prices are placeholders, **not** any real company's data. FreshyFresh Fresh
 Foods is an invented company. Shelf lives, min-life rules and the 5 °C excursion threshold are demo assumptions.
 A real client's QA team must validate them before reuse. Coordinates are approximate state-level points, not
 real sites; truck cost rates (`cost_per_km_usd`, `driver_cost_per_hour_usd`) are demo assumptions, not market rates.
@@ -49,7 +49,7 @@ Row counts are reproducible with seed 42. `data/generated/manifest.json` is the 
   - `dim_customer` as **SCD Type 2** (`valid_from`, `valid_to`, `is_current`). To practise, apply a change file
     in lab L3.
 - **gold**:
-  - Business-ready star schema with the same table names as above, consumed by `SM_Ambermoor_Ops` (Direct Lake),
+  - Business-ready star schema with the same table names as above, consumed by `SM_FreshyFresh_Ops` (Direct Lake),
     the agent and the app.
   - Keep the gold column names identical to this contract. `agent/` few-shots depend on them.
 

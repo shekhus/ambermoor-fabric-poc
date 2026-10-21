@@ -1,4 +1,4 @@
-"""Patch a downloaded SM_Ambermoor_Ops TMDL definition with the spec in fabric/semantic-model/SM_Ambermoor_Ops.md.
+"""Patch a downloaded SM_FreshyFresh_Ops TMDL definition with the spec in fabric/semantic-model/SM_FreshyFresh_Ops.md.
 
     python tools/sm_definition.py get --workspace <ws> --model <id> --out build/sm     # read-only
     python tools/sm_patch_tmdl.py --src build/sm                                      # local edit only

@@ -4,7 +4,7 @@
 # Lab L3 later rebuilds gold properly through silver (typing, dedupe, SCD Type 2).
 #
 # How to use:
-# - Fabric notebook "NB_03_gold_fasttrack", default lakehouse = LH_Ambermoor, run after NB_01_load_bronze.
+# - Fabric notebook "NB_03_gold_fasttrack", default lakehouse = LH_FreshyFresh, run after NB_01_load_bronze.
 # - Paste each "# %%" block into its own cell. Mark the first cell as the parameter cell.
 #
 # What it adds on top of bronze, so the semantic model, the app and the agent stay simple:

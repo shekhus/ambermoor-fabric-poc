@@ -1,15 +1,15 @@
 ---
-name: ambermoor-data
-description: Generate, verify, explain or load the synthetic Ambermoor refrigerated-foods dataset (lots, traceability, shipments, reefer telemetry, waste) and its golden answers. Use for questions about the data model, planted storylines, regenerating data, or uploading it to OneLake.
+name: freshyfresh-data
+description: Generate, verify, explain or load the synthetic FreshyFresh refrigerated-foods dataset (lots, traceability, shipments, reefer telemetry, waste) and its golden answers. Use for questions about the data model, planted storylines, regenerating data, or uploading it to OneLake.
 ---
 
-# Ambermoor synthetic data
+# FreshyFresh synthetic data
 
 All data is fictional. The contract is `docs/data-model.md`. Read it before writing any query or transform.
 
 ## Regenerate and verify
 ```bash
-python tools/generate_ambermoor_data.py --out data/generated --seed 42 [--upn-domain <your-tenant-domain>]
+python tools/generate_freshyfresh_data.py --out data/generated --seed 42 [--upn-domain <your-tenant-domain>]
 python tools/verify_golden.py --data data/generated     # all PASS or stop and investigate
 cp data/generated/golden_answers.json agent/golden_answers.json   # only if the generator changed
 ```
@@ -17,8 +17,8 @@ cp data/generated/golden_answers.json agent/golden_answers.json   # only if the 
 - `--upn-domain` sets the synthetic `qa_manager_upn` values on `dim_facility`. For real RLS tests, map one or two
   facilities to real test-user UPNs in the silver/gold layer. Don't edit the generator for that.
 
-## Load to Fabric (needs Shekhar's OK, target `WS-AMBERMOOR-DEV`)
-1. Upload the 18 `.parquet` files to `LH_Ambermoor` → `Files/landing/ambermoor/`.
+## Load to Fabric (needs Shekhar's OK, target `WS-FRESHYFRESH-DEV`)
+1. Upload the 18 `.parquet` files to `LH_FreshyFresh` → `Files/landing/ambermoor/`.
    Use the portal upload, or the `fabric` MCP OneLake upload tool (check its current name with the server's tool list).
 2. Run `fabric/notebooks/nb_01_load_bronze.py` (as notebook `NB_01_load_bronze`) to create the `bronze.*` tables.
 3. Telemetry: `reefer_telemetry.csv` → Eventhouse `KQL_ColdChain` table `ReeferTelemetry`, through Get data → Local file.

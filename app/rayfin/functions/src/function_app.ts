@@ -14,10 +14,10 @@ function describe(err: unknown): string {
 }
 
 /**
- * Ask Ambermoor: natural-language question -> DAX (via Claude). The app runs the DAX itself as the signed-in user,
+ * Ask FreshyFresh: natural-language question -> DAX (via Claude). The app runs the DAX itself as the signed-in user,
  * so row-level security shapes the answer. Logic lives in ask.ts; this file wires in the secret and reports errors.
  */
-udf.func('askAmbermoor', async (
+udf.func('askFreshyFresh', async (
   question: string,
   previousDax: string,
   previousError: string,
@@ -26,7 +26,7 @@ udf.func('askAmbermoor', async (
   try {
     return await answerQuestion(ctx.Secrets.ANTHROPIC_API_KEY, question, previousDax, previousError);
   } catch (err) {
-    console.error('askAmbermoor failed:', describe(err));
+    console.error('askFreshyFresh failed:', describe(err));
     return { title: 'Could not answer', explanation: describe(err), dax: '' };
   }
 }, []);

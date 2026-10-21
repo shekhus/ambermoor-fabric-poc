@@ -1,4 +1,4 @@
-# Ask Ambermoor: agent instructions
+# Ask FreshyFresh: agent instructions
 <!-- Same structure as the Fabric Data Agent tutorial repo: Context / Data Sources & Relationships / Business Rules.
      Paste the sections below into the agent's "AI instructions". Per-source notes can also go into each data
      source's instructions. Verify the current instruction size limit on Microsoft Learn before publishing. -->
@@ -30,7 +30,7 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 
 ## Data Sources & Relationships
 
-### Lakehouse `LH_Ambermoor`, schema `gold` (T-SQL via SQL analytics endpoint)
+### Lakehouse `LH_FreshyFresh`, schema `gold` (T-SQL via SQL analytics endpoint)
 - **dim_facility** (PK facility_id). Facility name, type (Plant/DC), country, region, latitude, longitude,
   qa_manager_upn.
 - **dim_product** (PK sku_id). Covers sku_name, item_name, category, brand, pack_type (Retail/Foodservice),
@@ -81,11 +81,11 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
 - **fact_inventory_daily**. Covers snapshot_date, facility_id, sku_id, cases_on_hand (plant level, not lot level).
 - **fact_supplier_notice**. Supplier notices that flag an ingredient lot (notice_date, status).
 
-### Semantic model `SM_Ambermoor_Ops` (DAX)
+### Semantic model `SM_FreshyFresh_Ops` (DAX)
 - Use for headline KPIs (OTIF %, fill rate %, waste rate %, revenue) when the question is about a KPI rather than
   specific lots or shipments. Row-level security applies to the asking user.
 
-### Eventhouse `EH_Ambermoor`, KQL database `KQL_ColdChain` (KQL)
+### Eventhouse `EH_FreshyFresh`, KQL database `KQL_ColdChain` (KQL)
 - **ReeferTelemetry**. Covers ts (UTC), truck_id, shipment_id, facility_id, temp_c, setpoint_c, door_open,
   reefer_status, latitude, longitude, speed_kmh, ignition_on. One reading per 15 minutes per shipment, from the
   planned departure (truck at the dock, ignition off) to delivery.

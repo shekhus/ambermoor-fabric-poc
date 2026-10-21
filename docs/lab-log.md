@@ -15,9 +15,9 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 -->
 
 ## FT1 · Data in (bronze + fast-track gold) · 9 Oct 2026 · [D2]
-- **What / why:** Landed 18 synthetic parquet files in `LH_Ambermoor/Files/landing/ambermoor`, loaded `bronze`
+- **What / why:** Landed 18 synthetic parquet files in `LH_FreshyFresh/Files/landing/ambermoor`, loaded `bronze`
   (NB_01), built app/agent-ready `gold` (NB_03_gold_fasttrack), and skipped silver for the fast track.
-- **Built:** `WS-AMBERMOOR-DEV` (Fabric Trial FTL64, West US 3): `LH_Ambermoor` (schemas enabled),
+- **Built:** `WS-FRESHYFRESH-DEV` (Fabric Trial FTL64, West US 3): `LH_FreshyFresh` (schemas enabled),
   `NB_01_load_bronze`, `NB_03_gold_fasttrack`. Notebooks are imported from `build/notebooks/*.ipynb`
   (`tools/py_to_ipynb.py`), so no cell pasting.
 - **Databricks analogue:** COPY INTO / Auto Loader from a Volume into bronze Delta, then a gold serving job.
@@ -33,12 +33,12 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 - **Acceptance check:** NB_01 PASS (18 tables = manifest). NB_03: 7/7 PASS (36 lots, 145 cases, 10 customers,
   4 excursions, on-time 94.81%, P02 OTIF 90.09%, fill rate 99.54%); `trace_genealogy` = 85,656 rows.
 
-## FT3 · SM_Ambermoor_Ops as code (TMDL) · 9 Oct 2026 · [D1]
+## FT3 · SM_FreshyFresh_Ops as code (TMDL) · 9 Oct 2026 · [D1]
 - **What / why:** Created the Direct Lake model from the lakehouse in the portal (all gold tables). Then pulled its
   definition as **TMDL**, added 19 relationships, 15 measures, the date table and RLS roles with
   `tools/sm_patch_tmdl.py`, and pushed it back with `tools/sm_definition.py` (Fabric REST `getDefinition` /
   `updateDefinition`). No clicking in relationships or measures.
-- **Built:** `WS-AMBERMOOR-DEV`/`SM_Ambermoor_Ops` (Direct Lake on OneLake, per `PBI_ProTooling` annotation).
+- **Built:** `WS-FRESHYFRESH-DEV`/`SM_FreshyFresh_Ops` (Direct Lake on OneLake, per `PBI_ProTooling` annotation).
 - **Databricks analogue:** metric view / dataset defined in YAML and deployed by Asset Bundles. Here the model
   definition is TMDL deployed by REST (the same files Git integration stores).
 - **Status:** Semantic model definition REST APIs: GA (Fabric REST v1,
@@ -59,7 +59,7 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 - **Built:**
   - `app/src/queries/{pulse,trace,scope}` (DAX in `.dax`, factories, Vega-Lite JSON)
   - `app/src/pages/*`, `app/src/services/holds.service.ts`, `app/rayfin/data/*`
-  - Deployed into the existing App item `WS-AMBERMOOR-APP`, which created its Fabric SQL database.
+  - Deployed into the existing App item `WS-AMBERMOOR-APP` (still its name: the item keeps the workspace's first name), which created its Fabric SQL database.
 - **Databricks analogue:** a Databricks App reading a SQL warehouse plus writing to Lakebase. Here the reads are DAX
   through the semantic model (RLS) and the writes go to Fabric SQL DB via Rayfin's Data API Builder.
 - **Status:** Fabric Apps **Preview**. Rayfin docs: https://rayfin.ai/docs/deploy/fabric-apps.md
@@ -103,13 +103,13 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
   - Root cause of the blank `dim_facility` member.
 
 ## FT4 · RLS tested as a P03 user (AT4) · 21 Oct 2026 · [D1]
-- **What/why:** sign in as the P03 QA-manager test user (a B2B guest, Viewer on WS-AMBERMOOR-APP) and check the
+- **What/why:** sign in as the P03 QA-manager test user (a B2B guest, Viewer on WS-FRESHYFRESH-APP) and check the
   app shows P03 only. Proves the model's RLS reaches the Fabric App, because the app queries as the signed-in user.
 - **Result: PASS.** The app shows "P03 · Great Lakes Plant" only: 35,338 cases, waste 1.46%, OTIF 91.1%,
   4 excursions (all TRK-117, based at P03). The header now has a "Viewing: <scope>" badge built from the
   RLS-filtered facility list, so it can't disagree with the data.
 - **Three fixes were needed, in this order:**
-  1. **Write bypasses RLS.** The test user had *All permissions* on SM_Ambermoor_Ops (Write included), so the
+  1. **Write bypasses RLS.** The test user had *All permissions* on SM_FreshyFresh_Ops (Write included), so the
      roles were ignored. Fix: remove access, re-grant **Read + Build** only. Workspace Admin/Member/Contributor
      also imply Write, so the user holds no role in DEV.
   2. **Empty roles.** Nobody was in QA Manager. Added the test user directly (not via a group).
@@ -141,7 +141,7 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 - **Open:** AT5 (a second plant user, e.g. P02, sees only P02).
 
 ## Fleet F1/F3/F5 · data, dashboard and model as code · 21 Oct 2026 · [D1][D2]
-- **What:** fleet data loaded (F1), `RTD_Ambermoor_Fleet` built from JSON (F3), model §6 pushed (F5), and a
+- **What:** fleet data loaded (F1), `RTD_FreshyFresh_Fleet` built from JSON (F3), model §6 pushed (F5), and a
   "Fleet & freight" tab in the app. All by REST from Claude Code; no portal clicks.
 - **Acceptance:** NB_03 asserts PASS (Q9 14, Q10 $3,957,156.99); model E/F PASS (P08 $31.93 highest, P06 $19.05
   lowest); guest still sees P03 only; 7 RTD tile queries return rows; app validate:visual 3/3.
@@ -161,3 +161,30 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
   **Preview**. Dashboard schema version 89: **status unverified** for Fabric (worked here).
 - **Interview keywords:** **item definition (updateDefinition)**, **framing**, **impersonatedUserName**,
   **Real-Time Dashboard**, **arg_max latest-state**.
+
+## Rename to FreshyFresh + live golden eval · 21 Oct 2026 · [D1][D3]
+- **What:** renamed the fictional company Ambermoor → FreshyFresh in the repo, the app, the docs and Fabric
+  (workspaces and items, by REST `PATCH displayName`). Then ran `/ask-freshyfresh eval` on live Fabric through
+  `tools/fabric_query.py` (ODBC Driver 18.7) and KQL.
+- **Result:** Q1–Q10 **10/10 PASS** (recall 36 lots / 10 customers / 145 cases / 551 destroyed; 4 excursions on
+  TRK-117, 158 cases rejected; P01 Cut Potatoes 5.42%; P07 Foodservice Monday 64.1%; fill 99.54%; 41 QA lots /
+  1,594 cases; P07 14/14 dock-caused, 6.26 h; trip cost $3,957,156.99).
+- **Gotchas:**
+  - **A Delta table can be in OneLake and in the Direct Lake model but missing from the SQL analytics endpoint.**
+    `gold.bridge_lot_ingredient` (21,927 rows) was absent from `INFORMATION_SCHEMA.TABLES`. Fix: Items - Refresh
+    Sql Endpoint Metadata, scoped to that table (`POST .../sqlEndpoints/{id}/refreshMetadata`, LRO).
+  - **Renames are by ID-safe for links, not for name lookups.** Tools that find items by `displayName` had to change
+    with the rename. Rayfin names its app item after the workspace at first deploy; renaming the workspace is fine
+    (`rayfin up --dry-run` reused the same item), but renaming the app item itself would create a new app.
+  - The lakehouse rename renamed its SQL analytics endpoint too; Direct Lake kept working (bound by ID).
+- **Databricks analogue:** `REFRESH TABLE` / `MSCK REPAIR` when the metastore misses a table that exists in storage.
+- **Status:** SQL analytics endpoint metadata refresh API: **GA** (REST reference, Sep 2026). Item/workspace
+  update API: **GA**. New metadata sync (`sp_dw_refresh_ext_table`): **Preview**, not enabled here.
+- **Interview keywords:** **SQL analytics endpoint metadata sync**, **refreshMetadata**, **displayName vs ID**.
+- **Exam-style questions:**
+  1. A new lakehouse table is queryable in Spark but not in the SQL analytics endpoint. First fix? *Refresh the
+     endpoint metadata (portal Refresh, or the refreshMetadata REST API).*
+  2. You rename a lakehouse. What breaks? *Anything that refers to it by name (notebook code using the name, tools
+     using displayName, SQL connection database name); ID-bound items such as Direct Lake models keep working.*
+  3. How do you refresh one table's endpoint metadata instead of the whole lakehouse? *refreshMetadata with
+     `tables: [{schema, tableNames}]` (max 25 per call); `recreateTables: true` drops and rebuilds them.*

@@ -10,17 +10,17 @@ Today: Fri 9 Oct 2026. Client kickoff: ~early Nov 2026.
 - [x] FT1 Data in (9 Oct, 20:11 IST): bronze + `NB_03_gold_fasttrack` PASS (counts as L1 + part of L3)
 - [x] FT2 Eventhouse: telemetry ingested, excursion KQL = 4 (part of L6). **21 Oct: 183,921 rows incl. GPS columns via `.ingest inline`; excursions = 4, naive = 112; `TruckLatestPosition()` = 48 trucks.**
 - [x] FT3 Semantic model: measures + RLS, validation queries A–D pass (L7, part of L5). **9 Oct: model + measures + roles pushed as TMDL, A–D PASS. 21 Oct: role members set, fixed-identity connection bound (SSO off), test user Read+Build.**
-- [ ] FT5 Ask Ambermoor in Claude Code via `fabric_query.py`: `/ask-ambermoor eval` Q1–Q8
-- [ ] FT4 Fabric App (Preview): KPI page, lot trace, hold writeback, RLS tested as `qa.p03`. **9 Oct: 3 pages built + deployed to WS-AMBERMOOR-APP (status healthy); visuals validated vs golden. 10 Oct 01:10: portal smoke test PASS (AT1–AT3 values, AT6 healthy); writeback PASS (hold created → Released, timeline). 21 Oct: AT4 PASS: P03 guest test user sees only "P03 · Great Lakes Plant" (scope badge added). Open: P02 user isolation (AT5).**
+- [x] FT5 Ask FreshyFresh in Claude Code via `fabric_query.py`: `/ask-freshyfresh eval` Q1–Q8 **21 Oct: Q1–Q10 all PASS on live Fabric (ODBC 18.7)**
+- [ ] FT4 Fabric App (Preview): KPI page, lot trace, hold writeback, RLS tested as `qa.p03`. **9 Oct: 3 pages built + deployed to WS-FRESHYFRESH-APP (status healthy); visuals validated vs golden. 10 Oct 01:10: portal smoke test PASS (AT1–AT3 values, AT6 healthy); writeback PASS (hold created → Released, timeline). 21 Oct: AT4 PASS: P03 guest test user sees only "P03 · Great Lakes Plant" (scope badge added). Open: P02 user isolation (AT5).**
 - [ ] FT6 Fabric Data Agent on F2 (same region): published, MCP in Claude Code, eval re-run, **F2 paused**
 
 ## Fleet slice: trucks, live location, trip cost → `docs/specs/fleet-trucks.md` (added 21 Oct)
 Before 28 Oct, or after the exam window. Local part done 21 Oct: generator, golden Q9/Q10, `verify_golden` 14 × PASS.
 - [x] F1 Re-upload 19 files, re-run NB_01 + NB_03 (fact_trip checks PASS) [D2] **21 Oct: uploaded via OneLake DFS, notebooks updated via REST (P03 mapping kept), both runs Completed = all golden asserts PASS.**
 - [x] F2 Eventhouse with GPS columns + `TruckLatestPosition()` (done with FT2, 21 Oct) [D2]
-- [ ] F3 `RTD_Ambermoor_Fleet` dashboard, live replay of TRK-117 [D2] **21 Oct: 7-tile dashboard pushed as code (`tools/rtd_fleet_build.py`, schema 89), every tile query tested. Open: visual check in portal, parameters, live replay.**
+- [ ] F3 `RTD_FreshyFresh_Fleet` dashboard, live replay of TRK-117 [D2] **21 Oct: 7-tile dashboard pushed as code (`tools/rtd_fleet_build.py`, schema 89), every tile query tested. Open: visual check in portal, parameters, live replay.**
 - [ ] F4 Activator rule: warm load on moving truck [D3]
-- [ ] F5 Model §6 + Fleet & freight page; `/ask-ambermoor eval` Q1–Q10 [D1] **21 Oct: model §6 pushed (`tools/sm_add_fleet.py`, roles kept) + refreshed: E/F PASS ($3,957,156.99; 14; P08 31.93 / P06 19.05); guest still P03-only. Fleet & freight tab deployed (validate:visual 3/3). Open: Q1–Q10 eval (needs ODBC 18).**
+- [x] F5 Model §6 + Fleet & freight page; `/ask-freshyfresh eval` Q1–Q10 [D1] **21 Oct: model §6 pushed (`tools/sm_add_fleet.py`, roles kept) + refreshed: E/F PASS ($3,957,156.99; 14; P08 31.93 / P06 19.05); guest still P03-only. Fleet & freight tab deployed (validate:visual 3/3). Q1–Q10 eval: 10/10 PASS (21 Oct, live SQL endpoint + KQL).**
 
 ## Phase 1: DP-700 labs (Mon 12 – Wed 28 Oct)
 Labs already partly covered by the fast track get a lighter pass: theory, exam traps and the missing pieces.

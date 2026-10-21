@@ -11,7 +11,7 @@ const dockDef = fleet.dockWaitByFacilityQuery();
 const costDef = fleet.costPerCaseQuery();
 const lanesDef = fleet.topLanesQuery();
 
-// Live truck positions stay in the Eventhouse (Real-Time Dashboard RTD_Ambermoor_Fleet); this page is trip history
+// Live truck positions stay in the Eventhouse (Real-Time Dashboard RTD_FreshyFresh_Fleet); this page is trip history
 // from the semantic model, so RLS scopes it like every other page. Set the dashboard link in .env.production.local (VITE_FLEET_MAP_URL).
 const LIVE_MAP_URL = import.meta.env.VITE_FLEET_MAP_URL;
 

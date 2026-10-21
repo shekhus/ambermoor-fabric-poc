@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 
 import { useThemeContext } from "@/hooks/theme.context";
 import { getFabricClient } from "@/lib/fabric-client";
-import { askAmbermoor, type AskAnswer } from "@/services/ask.service";
+import { askFreshyFresh, type AskAnswer } from "@/services/ask.service";
 import { Button, Empty, ErrorBanner, inputClass, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -67,12 +67,12 @@ export function AskPage({ scopeLabel }: { scopeLabel: string }) {
         setError(undefined);
         try {
             setPhase("writing");
-            let a = await askAmbermoor(text);
+            let a = await askFreshyFresh(text);
             let run = a.dax ? (setPhase("running"), await runDax(a.dax)) : {};
             if (run.error) {
                 // A query that fails in the model goes back to Claude once, with the error, to be fixed.
                 setPhase("fixing");
-                a = await askAmbermoor(text, a.dax, run.error);
+                a = await askFreshyFresh(text, a.dax, run.error);
                 run = a.dax ? (setPhase("running"), await runDax(a.dax)) : {};
             }
             setAnswer(a);
@@ -90,7 +90,7 @@ export function AskPage({ scopeLabel }: { scopeLabel: string }) {
         <div className="flex flex-col gap-grid">
             <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-2">
                 <label htmlFor="ask" className="flex items-center gap-2 text-400 font-semibold text-card-foreground">
-                    <Sparkles className="icon-size-200 text-primary" aria-hidden /> Ask Ambermoor
+                    <Sparkles className="icon-size-200 text-primary" aria-hidden /> Ask FreshyFresh
                 </label>
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <input id="ask" className={inputClass} value={question} maxLength={500} autoComplete="off"

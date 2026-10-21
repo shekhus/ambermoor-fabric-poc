@@ -47,7 +47,7 @@ function App() {
                         <div>
                             <h1 className="font-page-title text-500 font-semibold">Freshness Command Center</h1>
                             <p className="font-page-subtitle text-300 text-muted-foreground">
-                                Ambermoor Fresh Foods (fictional, synthetic data) · Jul–Sep 2026
+                                FreshyFresh Foods (fictional, synthetic data) · Jul–Sep 2026
                             </p>
                         </div>
                         {/* Scope badge: the facilities RLS lets this user see, so it always matches the data on screen. */}

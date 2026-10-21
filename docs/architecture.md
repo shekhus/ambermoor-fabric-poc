@@ -1,4 +1,4 @@
-# Architecture: Ambermoor Fresh Ops POC
+# Architecture: FreshyFresh Ops POC
 
 Two reference demos combined into one storyline:
 
@@ -12,23 +12,23 @@ Both sit on a DP-700-grade data platform and are built from one cockpit, Claude 
 ```mermaid
 flowchart LR
   subgraph LOCAL["Laptop: VS Code + Claude Code"]
-    GEN["generate_ambermoor_data.py"] --> FILES[("parquet + telemetry CSV<br/>golden_answers.json")]
+    GEN["generate_freshyfresh_data.py"] --> FILES[("parquet + telemetry CSV<br/>golden_answers.json")]
     SIM["reefer_simulator.py"]
     CC["Claude Code"]
   end
-  subgraph DEV["WS-AMBERMOOR-DEV (trial): DP-700 core"]
-    PL{{"PL_Ambermoor_Daily"}} --> NB["NB_01 bronze · NB_02 silver · NB_03 gold"]
-    NB --> LH[("LH_Ambermoor<br/>bronze · silver · gold")]
-    LH --> WH[("WH_Ambermoor<br/>T-SQL + RLS/CLS/DDM")]
-    LH --> SM["SM_Ambermoor_Ops<br/>Direct Lake + RLS"]
-    ES[["ES_ReeferTelemetry"]] --> EH[("EH_Ambermoor / KQL_ColdChain")]
+  subgraph DEV["WS-FRESHYFRESH-DEV (trial): DP-700 core"]
+    PL{{"PL_FreshyFresh_Daily"}} --> NB["NB_01 bronze · NB_02 silver · NB_03 gold"]
+    NB --> LH[("LH_FreshyFresh<br/>bronze · silver · gold")]
+    LH --> WH[("WH_FreshyFresh<br/>T-SQL + RLS/CLS/DDM")]
+    LH --> SM["SM_FreshyFresh_Ops<br/>Direct Lake + RLS"]
+    ES[["ES_ReeferTelemetry"]] --> EH[("EH_FreshyFresh / KQL_ColdChain")]
     EH -. "OneLake availability + shortcut" .-> LH
   end
-  subgraph APPWS["WS-AMBERMOOR-APP (trial): Fabric Apps PREVIEW"]
+  subgraph APPWS["WS-FRESHYFRESH-APP (trial): Fabric Apps PREVIEW"]
     FA["Freshness Command Center<br/>(Rayfin)"] --> SQLDB[("App SQL database<br/>QualityHold · CorrectiveAction · HoldUpdate")]
   end
-  subgraph AGWS["WS-AMBERMOOR-AGENT (paid F2, same region): FT6"]
-    DA["Fabric Data Agent: Ask Ambermoor"]
+  subgraph AGWS["WS-FRESHYFRESH-AGENT (paid F2, same region): FT6"]
+    DA["Fabric Data Agent: Ask FreshyFresh"]
   end
   FILES -->|upload to Files| LH
   FILES -->|Get data| EH
@@ -48,13 +48,13 @@ flowchart LR
 
 | Layer              | Items                                                                                                                                       | Status                                          | DP-700 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------ |
-| Ingest + medallion | LH_Ambermoor, NB_01–03, PL_Ambermoor_Daily, DF_Customer_Master                                                                             | GA (schema-enabled lakehouse:*verify* status) | D2     |
-| Serving + security | WH_Ambermoor (RLS/CLS/DDM), OneLake security, SM_Ambermoor_Ops (RLS)                                                                        | OneLake security:*verify*                     | D1     |
-| Real-time          | ES_ReeferTelemetry → EH_Ambermoor, KQL, shortcut, Activator                                                                                | GA,*verify* Activator                         | D2/D3  |
+| Ingest + medallion | LH_FreshyFresh, NB_01–03, PL_FreshyFresh_Daily, DF_Customer_Master                                                                             | GA (schema-enabled lakehouse:*verify* status) | D2     |
+| Serving + security | WH_FreshyFresh (RLS/CLS/DDM), OneLake security, SM_FreshyFresh_Ops (RLS)                                                                        | OneLake security:*verify*                     | D1     |
+| Real-time          | ES_ReeferTelemetry → EH_FreshyFresh, KQL, shortcut, Activator                                                                                | GA,*verify* Activator                         | D2/D3  |
 | CI/CD              | Git integration, deployment pipeline DEV→TEST                                                                                              | GA                                              | D1     |
 | Ops                | Monitoring hub, Capacity Metrics, OPTIMIZE/V-Order                                                                                          | GA                                              | D3     |
 | App                | Fabric App (Rayfin`dataapp` template): reads the model via `fabric-app-data` as the signed-in user; writeback holds via Rayfin entities | **Preview**                               | —     |
-| Agent              | Ask Ambermoor: Claude Code +`fabric_query.py` on trial (FT5) → Fabric Data Agent + MCP on F2 (FT6)                                       | Data Agent:*verify* GA/Preview; needs paid F2 | —     |
+| Agent              | Ask FreshyFresh: Claude Code +`fabric_query.py` on trial (FT5) → Fabric Data Agent + MCP on F2 (FT6)                                       | Data Agent:*verify* GA/Preview; needs paid F2 | —     |
 
 ## Design decisions (ADR-lite)
 
@@ -89,7 +89,7 @@ flowchart LR
 
 ## Open risks / to verify
 
-- Can a data agent in `WS-AMBERMOOR-AGENT` (F2) use sources in `WS-AMBERMOOR-DEV` (trial)?
+- Can a data agent in `WS-FRESHYFRESH-AGENT` (F2) use sources in `WS-FRESHYFRESH-DEV` (trial)?
   - Keep both capacities in the **same region**. A third-party write-up reports cross-region sources fail.
   - If it still fails: (a) shortcut the DEV gold tables into a lakehouse in the agent workspace (Learn says agents
     can query shortcut-backed tables), or (b) temporarily move DEV to the F2 for the demo. F2 is small; expect

@@ -1,6 +1,6 @@
 ---
 name: rayfin-app
-description: Build, run or deploy the Ambermoor Freshness Command Center Fabric App (Rayfin dataapp template) - scaffolding, semantic-model visuals via fabric-app-data, hold/corrective-action writeback via Rayfin entities, RLS testing, rayfin up. Use for any work under app/ or questions about Fabric Apps / Rayfin.
+description: Build, run or deploy the FreshyFresh Command Center Fabric App (Rayfin dataapp template) - scaffolding, semantic-model visuals via fabric-app-data, hold/corrective-action writeback via Rayfin entities, RLS testing, rayfin up. Use for any work under app/ or questions about Fabric Apps / Rayfin.
 ---
 
 # Fabric App (Rayfin `dataapp` template): working rules
@@ -43,18 +43,18 @@ cd app && npm install
 - `../docs/specs/app-command-center.md` (the spec) and `../agent/golden_answers.json`.
 
 ## Workflow
-1. `npx rayfin login`. Then `npx rayfin up --workspace-uri "<WS-AMBERMOOR-APP URL>"` provisions the item.
+1. `npx rayfin login`. Then `npx rayfin up --workspace-uri "<WS-FRESHYFRESH-APP URL>"` provisions the item.
    Ask first.
-2. `npx fabric-app-data add ambermoor --from-url "<SM_Ambermoor_Ops URL>"`. Then probe the schema with
+2. `npx fabric-app-data add ambermoor --from-url "<SM_FreshyFresh_Ops URL>"`. Then probe the schema with
    `npx fabric-app-data query`.
 3. Build page by page. Validate each visual with `npm run validate:visual` before UI work.
 4. Preview with `npm run dev`, then open the app item in Fabric with `&devUri=http://localhost:5173`.
 5. **Writeback.** Enable `services.data` (`dialect: mssql`). Add entities with explicit permission decorators and
    `@text({ max })`. Restart the dev loop. Then run `npx rayfin up` → `npx rayfin up status`.
-6. Never `--force`. Never deploy to a workspace other than `WS-AMBERMOOR-APP` without explicit instruction.
+6. Never `--force`. Never deploy to a workspace other than `WS-FRESHYFRESH-APP` without explicit instruction.
 
 ## Non-negotiables
 - KPI tiles must match `agent/golden_answers.json` (spec acceptance tests).
-- Test RLS as `qa.p03`. That user has Read + Build on the model and is NOT Contributor+ on `WS-AMBERMOOR-DEV`,
+- Test RLS as `qa.p03`. That user has Read + Build on the model and is NOT Contributor+ on `WS-FRESHYFRESH-DEV`,
   because those roles bypass RLS. The deployer's own view proves nothing.
 - Every entity has an explicit permission decorator. No silent `authenticated: *`.

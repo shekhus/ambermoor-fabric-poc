@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Read-only query tool for "Ask Ambermoor" on Fabric TRIAL (no Data Agent needed).
-Lets Claude Code run T-SQL against the LH_Ambermoor SQL analytics endpoint and KQL against KQL_ColdChain,
+Read-only query tool for "Ask FreshyFresh" on Fabric TRIAL (no Data Agent needed).
+Lets Claude Code run T-SQL against the LH_FreshyFresh SQL analytics endpoint and KQL against KQL_ColdChain,
 using your Azure CLI sign-in. It refuses anything that isn't a read.
 
 Setup (once):
@@ -9,8 +9,8 @@ Setup (once):
   2. pip install -r requirements.txt   (pyodbc, azure-identity, azure-kusto-data)
      + Microsoft "ODBC Driver 18 for SQL Server" on your OS (Windows/macOS/Linux installers on Microsoft Learn)
   3. Copy fabric.endpoints.example.json -> fabric.endpoints.json (gitignored) and fill in:
-       sql_server   : LH_Ambermoor > SQL analytics endpoint > settings > SQL connection string (host name)
-       sql_database : LH_Ambermoor
+       sql_server   : LH_FreshyFresh > SQL analytics endpoint > settings > SQL connection string (host name)
+       sql_database : LH_FreshyFresh
        kql_query_uri: KQL_ColdChain > Database details > Query URI
        kql_database : KQL_ColdChain
 

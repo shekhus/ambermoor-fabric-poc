@@ -1,4 +1,4 @@
-"""Build (and optionally push) the RTD_Ambermoor_Fleet Real-Time Dashboard definition as code.        [D3]
+"""Build (and optionally push) the RTD_FreshyFresh_Fleet Real-Time Dashboard definition as code.        [D3]
 
     python tools/rtd_fleet_build.py --out build/rtd                 # read-only: resolve IDs, write + validate JSON
     python tools/rtd_fleet_build.py --out build/rtd --push          # Fabric WRITE: updateDefinition (ask first)
@@ -102,7 +102,7 @@ def build(ws_id: str, db_id: str, cluster_uri: str) -> dict:
                       "queryRef": {"kind": "query", "queryId": qid}, "visualOptions": opts})
     return {
         "$schema": f"https://dataexplorer.azure.com/static/d/schema/{SCHEMA_VERSION}/dashboard.json",
-        "id": uid("dashboard"), "schema_version": SCHEMA_VERSION, "title": "RTD_Ambermoor_Fleet",
+        "id": uid("dashboard"), "schema_version": SCHEMA_VERSION, "title": "RTD_FreshyFresh_Fleet",
         "tiles": tiles, "baseQueries": [], "parameters": [], "embeddedApps": [],
         "dataSources": [{"id": ds_id, "name": "KQL_ColdChain", "kind": "kusto-trident", "clusterUri": cluster_uri,
                          "databaseArtifactId": db_id, "database": db_id, "workspace": ws_id}],
@@ -128,7 +128,7 @@ def validate(dash: dict, schema_dir: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workspace", default="WS-AMBERMOOR-DEV")
+    ap.add_argument("--workspace", default="WS-FRESHYFRESH-DEV")
     ap.add_argument("--out", default="build/rtd")
     ap.add_argument("--schema-dir")
     ap.add_argument("--push", action="store_true", help="Fabric WRITE: replace the dashboard definition")
@@ -148,9 +148,9 @@ def main():
     if a.schema_dir and not validate(dash, Path(a.schema_dir)):
         sys.exit("schema validation failed")
     if a.push:
-        rtd = by.get(("KQLDashboard", "RTD_Ambermoor_Fleet"))
+        rtd = by.get(("KQLDashboard", "RTD_FreshyFresh_Fleet"))
         if not rtd:
-            sys.exit("RTD_Ambermoor_Fleet not found: create it first (New item > Real-Time Dashboard)")
+            sys.exit("RTD_FreshyFresh_Fleet not found: create it first (New item > Real-Time Dashboard)")
         payload = base64.b64encode(json.dumps(dash).encode()).decode()
         body = {"definition": {"parts": [{"path": "RealTimeDashboard.json", "payload": payload,
                                           "payloadType": "InlineBase64"}]}}

@@ -13,17 +13,17 @@ Status labels follow what I could verify on 9 Oct 2026. Fabric moves fast, so re
 | Copilot-dependent features (e.g. Eventhouse MCP schema discovery) | ❌ likely | *verify*. The Eventhouse remote MCP needs Copilot for schema fetch |
 
 **Plan:** do everything on trial, and add a **pay-as-you-go F2** in Azure only for the Data Agent (FT6).
-Assign it only to `WS-AMBERMOOR-AGENT` and **pause it when idle**.
+Assign it only to `WS-FRESHYFRESH-AGENT` and **pause it when idle**.
 
 **Create the F2 (Azure portal, same Entra tenant as Fabric):**
 1. Create a resource → **Microsoft Fabric** (capacity).
 2. Fill in:
    - Subscription and resource group
-   - Name, e.g. `ambermoorf2`
+   - Name, e.g. `freshyfreshf2`
    - **Region = your trial capacity's region**. Find it under Admin portal → Capacity settings → Trial.
    - Size **F2**
    - Capacity administrator: you
-3. Once it's active, go to Fabric → `WS-AMBERMOOR-AGENT` → Workspace settings → Workspace type (formerly "License info") → assign the F2.
+3. Once it's active, go to Fabric → `WS-FRESHYFRESH-AGENT` → Workspace settings → Workspace type (formerly "License info") → assign the F2.
 4. Pause and resume from the capacity's Overview page in Azure. Pausing stops compute billing. Check
    storage/OneLake billing separately on Learn.
 
@@ -46,12 +46,12 @@ Assign it only to `WS-AMBERMOOR-AGENT` and **pause it when idle**.
 
 ## 3. Workspaces and identities
 1. Start the Fabric trial if it isn't active (Account manager → Start trial). Note the capacity region.
-2. Create `WS-AMBERMOOR-DEV`, `WS-AMBERMOOR-TEST` and `WS-AMBERMOOR-APP`. Workspace settings → Workspace type (formerly "License info") → Fabric Trial + capacity.
+2. Create `WS-FRESHYFRESH-DEV`, `WS-FRESHYFRESH-TEST` and `WS-FRESHYFRESH-APP`. Workspace settings → Workspace type (formerly "License info") → Fabric Trial + capacity.
 3. Create **two test users** in your Entra tenant, for example `qa.p03@…` and `ops.director@…`. RLS must be
    tested with users who are **not** workspace Contributor/Member/Admin, because those roles bypass RLS.
 4. Put IDs in `CLAUDE.local.md` (gitignored), for example:
    ```
-   TENANT_ID=…  WS_DEV_ID=…  LH_AMBERMOOR_ID=…  WS_APP_ID=…  QA_P03_UPN=qa.p03@…
+   TENANT_ID=…  WS_DEV_ID=…  LH_FRESHYFRESH_ID=…  WS_APP_ID=…  QA_P03_UPN=qa.p03@…
    ```
 
 ## 4. Local toolchain
@@ -75,14 +75,14 @@ Assign it only to `WS-AMBERMOOR-AGENT` and **pause it when idle**.
 3. You already added a Fabric MCP server in Claude Code. If it is the same local server under another name,
    remove one copy so Claude doesn't see duplicate tools: `claude mcp list`, then `claude mcp remove <n> --scope <scope>`.
 4. Run `/context` and check that `CLAUDE.md` is listed under Memory files. Run `/skills` and check you see
-   `dp700-lab`, `ambermoor-data`, `ask-ambermoor` and `rayfin-app`.
+   `dp700-lab`, `freshyfresh-data`, `ask-freshyfresh` and `rayfin-app`.
 5. **Windows, native (not WSL):** if `fabric` shows ✘ Failed in `claude mcp list`, try
    `"command": "cmd", "args": ["/c", "npx", "-y", "@microsoft/fabric-mcp@latest", "server", "start", "--mode", "all"]`.
    Older Claude Code docs recommended this wrapper. *Verify* on your version.
 
 ## 6. Generate and load data (lab L1 does the load)
 ```bash
-python tools/generate_ambermoor_data.py --out data/generated --seed 42
+python tools/generate_freshyfresh_data.py --out data/generated --seed 42
 python tools/verify_golden.py --data data/generated      # expect 9× PASS
 ```
 
@@ -91,8 +91,8 @@ The data agent MCP endpoint has **no dynamic client registration**. You attach a
 (scope `https://api.fabric.microsoft.com/.default`) yourself. `tools/fabric-token-header.mjs` does that through
 Claude Code's `headersHelper`, reusing your `az login`. User scope keeps your token tooling out of the repo:
 ```bash
-claude mcp add-json ambermoor-agent --scope user '{"type":"http","url":"https://api.fabric.microsoft.com/v1/mcp/workspaces/<WS_AGENT_ID>/dataagents/<AGENT_ID>/agent","headersHelper":"node <ABSOLUTE_PATH>/ambermoor-fabric-poc/tools/fabric-token-header.mjs"}'
-claude mcp get ambermoor-agent
+claude mcp add-json freshyfresh-agent --scope user '{"type":"http","url":"https://api.fabric.microsoft.com/v1/mcp/workspaces/<WS_AGENT_ID>/dataagents/<AGENT_ID>/agent","headersHelper":"node <ABSOLUTE_PATH>/ambermoor-fabric-poc/tools/fabric-token-header.mjs"}'
+claude mcp get freshyfresh-agent
 ```
 - Copy the exact URL from the agent's **Settings → Model Context Protocol** tab after publishing.
 - Agent answers may leave Fabric's compliance boundary (Learn warning). This is acceptable here because the data

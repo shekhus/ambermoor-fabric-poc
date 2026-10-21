@@ -1,5 +1,5 @@
 id: ambermoor-command-center
-name: Ambermoor Freshness Command Center
+name: FreshyFresh Command Center
 version: 1.0.0
 services:
   auth:
