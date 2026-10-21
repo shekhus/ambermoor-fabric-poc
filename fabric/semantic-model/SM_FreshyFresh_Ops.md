@@ -135,6 +135,26 @@ EVALUATE SUMMARIZECOLUMNS ( dim_facility[facility_id], "Cost per case", [Freight
 ORDER BY [Cost per case] DESC
 ```
 
+## 7. RLS for every fact (21 Oct 2026; apply with `tools/rls_links_apply.py`)
+Six facts had no relationship to `dim_facility`, so the QA Manager role did not filter them and the app's Ask tab had
+to block them. Each now relates **directly** to `dim_facility` (still no fact↔fact links). The four without a plant
+column get a gold-only `facility_id` from `NB_03_gold_fasttrack`.
+
+| From (many) | To (one) | Plant meaning |
+|---|---|---|
+| `fact_order[ship_from_facility_id]` | `dim_facility[facility_id]` | shipping site |
+| `fact_ingredient_receipt[facility_id]` | `dim_facility[facility_id]` | receiving plant |
+| `fact_shipment_line[facility_id]`, `bridge_lot_ingredient[facility_id]`, `fact_quality_test[facility_id]` | `dim_facility[facility_id]` | plant that made the lot |
+| `fact_supplier_notice[facility_id]` | `dim_facility[facility_id]` | plant that received the flagged lot |
+
+```dax
+// G. RLS coverage: as the P03 guest (impersonatedUserName) every count is P03-only; as admin, the full totals
+//    (20,837 shipment lines, 21,927 bridge rows, 16,248 tests, 3,317 orders, 2,040 receipts, 1 notice)
+EVALUATE ROW ( "lines", COUNTROWS ( fact_shipment_line ), "bridge", COUNTROWS ( bridge_lot_ingredient ),
+    "tests", COUNTROWS ( fact_quality_test ), "orders", COUNTROWS ( fact_order ),
+    "receipts", COUNTROWS ( fact_ingredient_receipt ), "notices", COUNTROWS ( fact_supplier_notice ) )
+```
+
 ## Optional accelerator: let Claude Code build the model
 Microsoft's Power BI Modeling/Authoring MCP server can create tables, relationships, measures and roles
 (local server GA v1.0.0, Sept 2026; hosted endpoint Preview). It needs the XMLA endpoint (Read Write).

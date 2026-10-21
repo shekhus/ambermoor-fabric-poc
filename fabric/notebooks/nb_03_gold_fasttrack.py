@@ -10,6 +10,8 @@
 # What it adds on top of bronze, so the semantic model, the app and the agent stay simple:
 #   - gold.fact_shipment: in_full, otif, tor_minutes, max_temp_c, is_excursion, requested_delivery_date, ship_date
 #   - gold.fact_order_line: + ship_from_facility_id (direct star join to dim_facility, no snowflake path)
+#   - gold.fact_shipment_line, bridge_lot_ingredient, fact_quality_test (+ lot's plant), fact_supplier_notice
+#     (+ receiving plant): + facility_id, so RLS on dim_facility filters them too
 #   - gold.trace_genealogy: ingredient lot -> finished lot -> shipment -> customer (denormalised traceability mart)
 #   - gold.dim_facility: optional real test-user UPNs for RLS via upn_overrides
 #   - gold.fact_trip: one trip per shipment with dock wait, drive time and trip cost (fleet extension)
@@ -83,10 +85,18 @@ shipment = (bronze("fact_shipment")
             .withColumn("ship_date", F.to_date("ship_ts")))
 write(shipment, "fact_shipment")
 
-# %% production, waste, inventory, quality, traceability inputs (pass-through)
-for t in ["fact_lot", "fact_waste", "fact_inventory_daily", "fact_shipment_line", "fact_ingredient_receipt",
-          "bridge_lot_ingredient", "fact_quality_test", "fact_supplier_notice"]:
+# %% production, waste, inventory, quality, traceability inputs
+for t in ["fact_lot", "fact_waste", "fact_inventory_daily", "fact_ingredient_receipt"]:
     write(bronze(t), t)
+
+# + facility_id so every fact joins dim_facility directly and RLS filters it (no fact-to-fact relationships):
+# lot-level tables take the producing plant of the lot; a supplier notice takes the plant that received the lot.
+lot_facility = bronze("fact_lot").select("lot_id", "facility_id")
+for t in ["fact_shipment_line", "bridge_lot_ingredient", "fact_quality_test"]:
+    write(bronze(t).join(lot_facility, "lot_id", "left"), t)
+write(bronze("fact_supplier_notice")
+      .join(bronze("fact_ingredient_receipt").select("ingredient_lot_id", "facility_id"), "ingredient_lot_id", "left"),
+      "fact_supplier_notice")
 
 # %% traceability mart: one row per (ingredient lot, finished lot, shipment line)
 lots = bronze("fact_lot").select("lot_id", "sku_id", "facility_id", "production_date", "best_by_date")
@@ -145,6 +155,9 @@ checks = {
     "Q9 late elsewhere, dock-caused (0)": (ft.where("NOT on_time AND is_dock_delayed").count()
                                            - p07_mon_fs_late.where("is_dock_delayed").count(), 0),
     "Q10 total trip cost USD (3957156.99)": (round(ft.agg(F.sum("trip_cost_usd")).first()[0], 2), 3957156.99),
+    "RLS: rows with no facility_id (0)": (sum(spark.table(f"{gold_schema}.{x}").where("facility_id IS NULL").count()
+                                              for x in ["fact_shipment_line", "bridge_lot_ingredient",
+                                                        "fact_quality_test", "fact_supplier_notice"]), 0),
 }
 failed = {k: v for k, v in checks.items() if v[0] != v[1]}
 for k, (got, exp) in checks.items():

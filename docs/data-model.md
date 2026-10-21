@@ -51,6 +51,9 @@ Row counts are reproducible with seed 42. `data/generated/manifest.json` is the 
 - **gold**:
   - Business-ready star schema with the same table names as above, consumed by `SM_FreshyFresh_Ops` (Direct Lake),
     the agent and the app.
+  - Gold-only `facility_id` (so RLS on `dim_facility` filters every fact): `fact_shipment_line`,
+    `bridge_lot_ingredient` and `fact_quality_test` carry the **producing plant of the lot**; `fact_supplier_notice`
+    carries the **plant that received the ingredient lot**. Not in the generated files or bronze.
   - Keep the gold column names identical to this contract. `agent/` few-shots depend on them.
 
 ## Gold additions from `NB_03_gold_fasttrack` (used by the model, app and agent)

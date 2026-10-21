@@ -19,7 +19,8 @@ Before 28 Oct, or after the exam window. Local part done 21 Oct: generator, gold
 - [x] F1 Re-upload 19 files, re-run NB_01 + NB_03 (fact_trip checks PASS) [D2] **21 Oct: uploaded via OneLake DFS, notebooks updated via REST (P03 mapping kept), both runs Completed = all golden asserts PASS.**
 - [x] F2 Eventhouse with GPS columns + `TruckLatestPosition()` (done with FT2, 21 Oct) [D2]
 - [ ] F3 `RTD_FreshyFresh_Fleet` dashboard, live replay of TRK-117 [D2] **21 Oct: 7-tile dashboard pushed as code (`tools/rtd_fleet_build.py`, schema 89), every tile query tested. Open: visual check in portal, parameters, live replay.**
-- [ ] F4 Activator rule: warm load on moving truck [D3]
+- [ ] F4 Activator rule: warm load on moving truck [D3] **21 Oct: block 9 query tested (0 rows on history, as expected); needs a TRK-117 replay + portal "Set alert".**
+- [ ] RLS for every fact (model §7) [D1] **21 Oct: notebook + `tools/sm_add_facility_links.py` + `tools/rls_links_apply.py` ready, joins checked in DuckDB (0 nulls). Open: run `rls_links_apply.py` (Fabric write), then check G as the P03 guest, rebuild the Ask context, redeploy.**
 - [x] F5 Model §6 + Fleet & freight page; `/ask-freshyfresh eval` Q1–Q10 [D1] **21 Oct: model §6 pushed (`tools/sm_add_fleet.py`, roles kept) + refreshed: E/F PASS ($3,957,156.99; 14; P08 31.93 / P06 19.05); guest still P03-only. Fleet & freight tab deployed (validate:visual 3/3). Q1–Q10 eval: 10/10 PASS (21 Oct, live SQL endpoint + KQL).**
 
 ## Phase 1: DP-700 labs (Mon 12 – Wed 28 Oct)

@@ -80,6 +80,9 @@ Data window: 2026-07-01 to 2026-09-28. All data is synthetic.
   - Temp Excursion
 - **fact_inventory_daily**. Covers snapshot_date, facility_id, sku_id, cases_on_hand (plant level, not lot level).
 - **fact_supplier_notice**. Supplier notices that flag an ingredient lot (notice_date, status).
+- fact_shipment_line, bridge_lot_ingredient and fact_quality_test also carry `facility_id` in gold (the plant that
+  made the lot); fact_supplier_notice carries the plant that received the lot. It exists for RLS. "Shipped from"
+  questions still use `fact_shipment.ship_from_facility_id`.
 
 ### Semantic model `SM_FreshyFresh_Ops` (DAX)
 - Use for headline KPIs (OTIF %, fill rate %, waste rate %, revenue) when the question is about a KPI rather than
