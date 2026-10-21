@@ -24,7 +24,13 @@ udf.func('askFreshyFresh', async (
   ctx: RayfinContext,
 ): Promise<AskAnswer> => {
   try {
-    return await answerQuestion(ctx.Secrets.ANTHROPIC_API_KEY, question, previousDax, previousError);
+    // Pasted secrets often carry a newline, spaces or quotes; Anthropic then answers 401 "invalid x-api-key".
+    const apiKey = String(ctx.Secrets.ANTHROPIC_API_KEY ?? '').trim().replace(/^["']|["']$/g, '');
+    if (!apiKey.startsWith('sk-ant-api')) {
+      return { title: 'Could not answer', dax: '', explanation:
+        'The stored ANTHROPIC_API_KEY is not a Claude API key (it should start with "sk-ant-api"). Set it again with: npx rayfin secret set ANTHROPIC_API_KEY' };
+    }
+    return await answerQuestion(apiKey, question, previousDax, previousError);
   } catch (err) {
     console.error('askFreshyFresh failed:', describe(err));
     return { title: 'Could not answer', explanation: describe(err), dax: '' };
