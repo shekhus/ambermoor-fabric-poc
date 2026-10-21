@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import { GraduationCap, RotateCcw } from "lucide-react";
 
-import { resetMyOpenHolds, type Hold } from "@/services/holds.service";
+import { resetMyHolds, type Hold } from "@/services/holds.service";
 import { Button, ErrorBanner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +74,7 @@ const CASES: Case[] = [
             {
                 tab: "holds", title: "Close it out",
                 doThis: "Click Mark done on the action. In real life the lot would then be destroyed. For the demo, leave the hold Open: "
-                    + "Reset demo releases it at the end.",
+                    + "Reset demo archives it at the end.",
                 network: "Action status Done. The hold stays Open until a person releases or destroys it.",
                 why: "Closing the action and deciding the stock are separate steps, by design.",
                 data: "App database: CorrectiveAction.status, QualityHold.status.",
@@ -129,7 +129,7 @@ const CASES: Case[] = [
                 tab: "holds", title: "Fix the truck, decide the product",
                 doThis: "On the hold add the action \"Service TRK-117 reefer unit and recalibrate the probe\", root cause Equipment, "
                     + "owner = your email, due tomorrow. Post the update \"58 other cases of this lot were within temperature\". "
-                    + "Optional: click Destroy (temperature-abused food is destroyed; the hold moves to the Destroyed tab and stays there).",
+                    + "Optional: click Destroy (temperature-abused food is destroyed; the hold moves to the Destroyed tab until Reset demo).",
                 network: "Corrective action Open with root cause Equipment; if you destroyed it, the hold shows in Destroyed (n).",
                 why: "Root-cause categories show over time whether problems come from suppliers, equipment or process.",
                 data: "App database: CorrectiveAction.root_cause_category, QualityHold.status = Destroyed.",
@@ -233,9 +233,9 @@ export function TutorialPage({ scopeLabel, isNetwork, holds, onGo, onReset }: {
         setResetting(true);
         setError(undefined);
         try {
-            const n = await resetMyOpenHolds(holds);
+            const n = await resetMyHolds(holds);
             setDone(new Set());
-            setMessage(n === 0 ? "Nothing to reset: you have no open holds." : `Reset done: ${n} open hold${n === 1 ? "" : "s"} released.`);
+            setMessage(n === 0 ? "Nothing to reset: you have no holds." : `Reset done: ${n} hold${n === 1 ? "" : "s"} archived. Every tab starts from 0.`);
             onReset();
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
@@ -266,7 +266,7 @@ export function TutorialPage({ scopeLabel, isNetwork, holds, onGo, onReset }: {
                     ) : (
                         <>
                             <span className="text-300 text-card-foreground">
-                                Release your open holds and cancel their open actions? Destroyed holds stay destroyed (audit trail).
+                                Archive every hold you opened (open, released and destroyed) and cancel their open actions? They disappear from the app but stay in the database.
                             </span>
                             <Button variant="danger" onClick={() => void reset()} disabled={resetting}>{resetting ? "Resetting…" : "Yes, reset"}</Button>
                             <Button variant="secondary" onClick={() => setConfirming(false)} disabled={resetting}>Cancel</Button>
@@ -325,8 +325,8 @@ export function TutorialPage({ scopeLabel, isNetwork, holds, onGo, onReset }: {
             </ol>
 
             <p className="text-300 text-muted-foreground">
-                Finished? Click <strong>Reset demo</strong> above so the next person starts clean. Nothing is deleted: each released hold
-                gets a "Released by Tutorial reset" entry in its timeline. Ask needs Anthropic API credit; until then those steps show
+                Finished? Click <strong>Reset demo</strong> above so the next person starts clean. Nothing is deleted: your holds are
+                archived (hidden from the app, kept in the database) and each gets an "Archived by Tutorial reset" entry in its timeline. Ask needs Anthropic API credit; until then those steps show
                 an error.
             </p>
         </div>

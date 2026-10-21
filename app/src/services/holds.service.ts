@@ -7,6 +7,8 @@ import type { FreshyFreshAppSchema } from "../../rayfin/data/schema";
 // Lists use .first(500).execute(): fine for the POC's volumes. Switch to executePaginated() before real use.
 
 export type HoldStatus = "Open" | "Released" | "Destroyed";
+/** Set only by the Tutorial reset; archived holds stay in the database for audit but are not listed. */
+const ARCHIVED = "Archived";
 export type Severity = "Low" | "Medium" | "High" | "Critical";
 export type ActionStatus = "Open" | "Done" | "Cancelled";
 export type RootCause = "Supplier" | "Process" | "Equipment" | "People" | "Other";
@@ -63,7 +65,8 @@ export async function listHolds(): Promise<Hold[]> {
         .orderBy({ opened_at: "desc" })
         .first(500)
         .execute();
-    return rows as unknown as Hold[];
+    return (rows as unknown as (Omit<Hold, "status"> & { status: string })[])
+        .filter((h): h is Hold => h.status !== ARCHIVED);
 }
 
 export async function createHold(input: Omit<Hold, "id" | "status" | "opened_by" | "opened_at">): Promise<void> {
@@ -132,18 +135,19 @@ export async function setActionStatus(action: ActionRow, status: ActionStatus): 
 }
 
 /**
- * Tutorial reset: holds are an audit trail (no deletes), so "reset" releases the signed-in user's open holds,
- * cancels their open actions and logs it on each timeline. Open holds go back to 0; the history stays.
+ * Tutorial reset: holds are an audit trail (no deletes), so "reset" archives every hold the signed-in user opened
+ * (Open, Released or Destroyed), cancels their open actions and logs the old status on each timeline. Archived holds
+ * stay in the database but the app no longer lists them, so the next person starts from 0 in every tab.
  */
-export async function resetMyOpenHolds(holds: Hold[]): Promise<number> {
+export async function resetMyHolds(holds: Hold[]): Promise<number> {
     const me = currentUser();
-    const mine = holds.filter((h) => h.status === "Open" && h.opened_by === me);
+    const mine = holds.filter((h) => h.opened_by === me);
     for (const h of mine) {
         for (const a of await listActions(h.id)) {
             if (a.status === "Open") await client().data.CorrectiveAction.update({ id: a.id }, { status: "Cancelled" });
         }
-        await client().data.QualityHold.update({ id: h.id }, { status: "Released" });
-        await addUpdate(h.id, "Released by Tutorial reset (demo clean-up)");
+        await client().data.QualityHold.update({ id: h.id }, { status: ARCHIVED });
+        await addUpdate(h.id, `Archived by Tutorial reset (demo clean-up); status was ${h.status}`);
     }
     return mine.length;
 }
