@@ -59,7 +59,7 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 - **Built:**
   - `app/src/queries/{pulse,trace,scope}` (DAX in `.dax`, factories, Vega-Lite JSON)
   - `app/src/pages/*`, `app/src/services/holds.service.ts`, `app/rayfin/data/*`
-  - Deployed into the existing App item `WS-AMBERMOOR-APP` (still its name: the item keeps the workspace's first name), which created its Fabric SQL database.
+  - Deployed into the existing App item (then `WS-AMBERMOOR-APP`, renamed `WS-FRESHYFRESH-APP` on 21 Oct; Rayfin reuses it by recorded ID), which created its Fabric SQL database.
 - **Databricks analogue:** a Databricks App reading a SQL warehouse plus writing to Lakebase. Here the reads are DAX
   through the semantic model (RLS) and the writes go to Fabric SQL DB via Rayfin's Data API Builder.
 - **Status:** Fabric Apps **Preview**. Rayfin docs: https://rayfin.ai/docs/deploy/fabric-apps.md
@@ -175,7 +175,7 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
     Sql Endpoint Metadata, scoped to that table (`POST .../sqlEndpoints/{id}/refreshMetadata`, LRO).
   - **Renames are by ID-safe for links, not for name lookups.** Tools that find items by `displayName` had to change
     with the rename. Rayfin names its app item after the workspace at first deploy; renaming the workspace is fine
-    (`rayfin up --dry-run` reused the same item), but renaming the app item itself would create a new app.
+    (`rayfin up --dry-run` reused the same item), and so is renaming the app item: `rayfin up` reuses it by the recorded `fabricItemId`, not by name (its functions item IS looked up by name, so leave that one).
   - The lakehouse rename renamed its SQL analytics endpoint too; Direct Lake kept working (bound by ID).
 - **Databricks analogue:** `REFRESH TABLE` / `MSCK REPAIR` when the metastore misses a table that exists in storage.
 - **Status:** SQL analytics endpoint metadata refresh API: **GA** (REST reference, Sep 2026). Item/workspace
