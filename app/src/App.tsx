@@ -34,6 +34,11 @@ function App() {
     const facilityIds = facilities.table ? facilityRows.map((f) => String(f.facilityId)) : undefined;
     const holds = useHolds(facilityIds);
     const openHolds = holds.holds.filter((h) => h.status === "Open").length;
+    // Holds are shared, writable state: reload them whenever a page that shows them opens.
+    const go = (id: PageId) => {
+        setPage(id);
+        if (id === "holds" || id === "pulse" || id === "tutorial") void holds.refetch();
+    };
     const scopeLabel = !facilityIds ? "…" : facilityIds.length === 1
         ? `${facilityIds[0]} · ${String(facilityRows[0].facilityName)}` : `Network · ${facilityIds.length} facilities`;
 
@@ -60,7 +65,7 @@ function App() {
                     <div className="flex items-center gap-2">
                         <nav role="tablist" aria-label="Pages" className="flex gap-1 rounded-lg border border-border bg-card p-1">
                             {PAGES.map((p) => (
-                                <button key={p.id} role="tab" type="button" aria-selected={page === p.id} onClick={() => setPage(p.id)}
+                                <button key={p.id} role="tab" type="button" aria-selected={page === p.id} onClick={() => go(p.id)}
                                     className={cn(
                                         "rounded-md px-3 py-1.5 text-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                         page === p.id ? "bg-primary text-primary-foreground" : "text-card-foreground hover:bg-hover",
@@ -89,7 +94,7 @@ function App() {
                 {page === "ask" && <AskPage scopeLabel={scopeLabel} />}
                 {page === "tutorial" && (
                     <TutorialPage scopeLabel={scopeLabel} isNetwork={(facilityIds?.length ?? 0) > 1} holds={holds.holds}
-                        onGo={setPage} onReset={() => void holds.refetch()} />
+                        onGo={go} onReset={() => void holds.refetch()} />
                 )}
             </div>
         </div>
