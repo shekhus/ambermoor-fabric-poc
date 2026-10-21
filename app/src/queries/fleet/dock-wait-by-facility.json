@@ -10,7 +10,8 @@
     },
     "tooltip": [
       { "field": "facilityId", "title": "Facility" },
-      { "field": "avgDockWait", "title": "Avg dock wait (h)", "format": ".2f" },
+      { "field": "avgDockWait", "title": "Avg dock wait, all trips (h)", "format": ".2f" },
+      { "field": "lateDockWait", "title": "Avg dock wait, those late trips (h)", "format": ".2f" },
       { "field": "dockDelayedLate", "title": "Late trips caused by dock wait", "format": ",.0f" },
       { "field": "trips", "title": "Trips", "format": ",.0f" }
     ]
