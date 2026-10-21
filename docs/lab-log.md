@@ -188,3 +188,18 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
      using displayName, SQL connection database name); ID-bound items such as Direct Lake models keep working.*
   3. How do you refresh one table's endpoint metadata instead of the whole lakehouse? *refreshMetadata with
      `tables: [{schema, tableNames}]` (max 25 per call); `recreateTables: true` drops and rebuilds them.*
+
+## RLS for every fact · 21 Oct 2026 · [D1]
+- **What:** six facts (shipment lines, lot↔ingredient bridge, QA tests, orders, ingredient receipts, supplier notices)
+  had no path to `dim_facility`, so the QA Manager role did not filter them. Gold now carries `facility_id` on the
+  four that lacked it, and each fact relates directly to `dim_facility` (star, no fact↔fact links).
+- **How (all code, one command):** `tools/rls_links_apply.py` = push + run NB_03 (Job Scheduler) → SQL endpoint
+  metadata refresh → TMDL get/patch/update (`tools/sm_add_facility_links.py`, add-only) → model refresh.
+- **Result:** validation G as admin = full totals; impersonating the P03 guest = P03 rows only, equal to the SQL
+  counts (4,087 / 4,559 / 3,147 / 539 / 405 / 0). The app's Ask tab no longer blocks any table.
+- **Gotcha:** RLS on a dimension only filters tables that relationship paths reach. A fact with no relationship is
+  fully visible to every role member: check every table, not just the ones on report pages.
+- **Databricks analogue:** a row filter on every table in Unity Catalog, not just the dimension.
+- **Status:** RLS, Direct Lake, Job Scheduler API: **GA**.
+- **Exam-style question:** A role filters `dim_facility`. Which tables does it restrict? *Only tables reached from
+  `dim_facility` through active relationships in the filter direction; unrelated tables are unfiltered.*

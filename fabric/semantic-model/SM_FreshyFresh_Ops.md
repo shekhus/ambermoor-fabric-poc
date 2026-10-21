@@ -135,7 +135,7 @@ EVALUATE SUMMARIZECOLUMNS ( dim_facility[facility_id], "Cost per case", [Freight
 ORDER BY [Cost per case] DESC
 ```
 
-## 7. RLS for every fact (21 Oct 2026; apply with `tools/rls_links_apply.py`)
+## 7. RLS for every fact (applied 21 Oct 2026 with `tools/rls_links_apply.py`; validation G PASS)
 Six facts had no relationship to `dim_facility`, so the QA Manager role did not filter them and the app's Ask tab had
 to block them. Each now relates **directly** to `dim_facility` (still no fact↔fact links). The four without a plant
 column get a gold-only `facility_id` from `NB_03_gold_fasttrack`.
