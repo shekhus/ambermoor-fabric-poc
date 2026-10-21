@@ -105,7 +105,7 @@ CALCULATETABLE (
 If a number is off, compare with `NB_03_gold_fasttrack`'s acceptance cell first. That narrows it down to the
 data or the DAX.
 
-## 6. Fleet extension (proposed, not pushed to the model yet)
+## 6. Fleet extension (pushed 21 Oct 2026 with `tools/sm_add_fleet.py`; validation E/F PASS)
 Adds trucking cost and dock wait for the Power BI / Fabric App "Fleet & freight" page. Live position stays in KQL
 (Real-Time Dashboard); the model only holds trip history. Apply with the same TMDL route as FT3, after
 `NB_03_gold_fasttrack` has written `gold.fact_trip` and `gold.dim_truck`.

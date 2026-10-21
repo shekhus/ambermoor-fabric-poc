@@ -1,0 +1,7 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_facility[facility_id],
+    "Freight Cost per Case", [Freight Cost per Case],
+    "Trip Cost", [Trip Cost]
+)
+ORDER BY [Freight Cost per Case] DESC

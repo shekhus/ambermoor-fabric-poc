@@ -130,3 +130,20 @@ export async function setActionStatus(action: ActionRow, status: ActionStatus): 
     await client().data.CorrectiveAction.update({ id: action.id }, { status });
     await addUpdate(action.hold_id, `Action "${action.title}" → ${status}`);
 }
+
+/**
+ * Tutorial reset: holds are an audit trail (no deletes), so "reset" releases the signed-in user's open holds,
+ * cancels their open actions and logs it on each timeline. Open holds go back to 0; the history stays.
+ */
+export async function resetMyOpenHolds(holds: Hold[]): Promise<number> {
+    const me = currentUser();
+    const mine = holds.filter((h) => h.status === "Open" && h.opened_by === me);
+    for (const h of mine) {
+        for (const a of await listActions(h.id)) {
+            if (a.status === "Open") await client().data.CorrectiveAction.update({ id: a.id }, { status: "Cancelled" });
+        }
+        await client().data.QualityHold.update({ id: h.id }, { status: "Released" });
+        await addUpdate(h.id, "Released by Tutorial reset (demo clean-up)");
+    }
+    return mine.length;
+}

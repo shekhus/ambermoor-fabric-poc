@@ -1,0 +1,8 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_facility[facility_id],
+    "Avg Dock Wait (h)", [Avg Dock Wait (h)],
+    "Dock-Delayed Late Trips", [Dock-Delayed Late Trips],
+    "Trips", [Trips]
+)
+ORDER BY dim_facility[facility_id]

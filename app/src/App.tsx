@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Moon, Snowflake, Sun } from "lucide-react";
+import { MapPin, Moon, Snowflake, Sun } from "lucide-react";
 
 import { useThemeContext } from "@/hooks/theme.context";
 import { useHolds } from "@/hooks/use-holds";
@@ -8,13 +8,19 @@ import { rowsAsObjects, useTable } from "@/components/ui";
 import { PulsePage } from "@/pages/pulse-page";
 import { TracePage } from "@/pages/trace-page";
 import { HoldsPage } from "@/pages/holds-page";
+import { FleetPage } from "@/pages/fleet-page";
+import { AskPage } from "@/pages/ask-page";
+import { TutorialPage } from "@/pages/tutorial-page";
 import { cn } from "@/lib/utils";
 
 const facilitiesDef = scope.myFacilitiesQuery();
 const PAGES = [
+    { id: "tutorial", label: "Tutorial" },
     { id: "pulse", label: "Plant pulse" },
     { id: "trace", label: "Lot trace" },
     { id: "holds", label: "Holds & actions" },
+    { id: "fleet", label: "Fleet & freight" },
+    { id: "ask", label: "Ask" },
 ] as const;
 type PageId = (typeof PAGES)[number]["id"];
 
@@ -41,9 +47,15 @@ function App() {
                         <div>
                             <h1 className="font-page-title text-500 font-semibold">Freshness Command Center</h1>
                             <p className="font-page-subtitle text-300 text-muted-foreground">
-                                Ambermoor Fresh Foods (fictional, synthetic data) · Jul–Sep 2026 · Scope: {scopeLabel}
+                                Ambermoor Fresh Foods (fictional, synthetic data) · Jul–Sep 2026
                             </p>
                         </div>
+                        {/* Scope badge: the facilities RLS lets this user see, so it always matches the data on screen. */}
+                        <span title="Plants you can see (row-level security)"
+                            className="flex items-center gap-1.5 rounded-full border border-primary bg-card px-3 py-1 text-300 font-semibold text-card-foreground">
+                            <MapPin className="icon-size-200 text-primary" aria-hidden />
+                            Viewing: {scopeLabel}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <nav role="tablist" aria-label="Pages" className="flex gap-1 rounded-lg border border-border bg-card p-1">
@@ -72,6 +84,12 @@ function App() {
                 {page === "holds" && (
                     <HoldsPage holds={holds.holds} isLoading={holds.isLoading} error={holds.error}
                         onChanged={() => void holds.refetch()} />
+                )}
+                {page === "fleet" && <FleetPage showLiveMap={(facilityIds?.length ?? 0) > 1} />}
+                {page === "ask" && <AskPage scopeLabel={scopeLabel} />}
+                {page === "tutorial" && (
+                    <TutorialPage scopeLabel={scopeLabel} isNetwork={(facilityIds?.length ?? 0) > 1} holds={holds.holds}
+                        onGo={setPage} onReset={() => void holds.refetch()} />
                 )}
             </div>
         </div>

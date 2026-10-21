@@ -1,0 +1,13 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "y": { "field": "laneId", "type": "nominal", "title": null, "sort": "-x" },
+    "x": { "field": "tripCost", "type": "quantitative", "title": "Trip cost (USD)" },
+    "tooltip": [
+      { "field": "laneId", "title": "Lane" },
+      { "field": "customer", "title": "Customer" },
+      { "field": "tripCost", "title": "Trip cost", "format": "$,.0f" }
+    ]
+  }
+}

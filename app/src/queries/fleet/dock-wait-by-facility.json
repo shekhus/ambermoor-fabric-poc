@@ -1,0 +1,18 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "x": { "field": "facilityId", "type": "nominal", "title": "Ship-from facility" },
+    "y": { "field": "avgDockWait", "type": "quantitative", "title": "Avg dock wait (h)" },
+    "color": {
+      "condition": { "test": "datum.dockDelayedLate > 0", "value": "#c4314b" },
+      "value": "#0f6cbd"
+    },
+    "tooltip": [
+      { "field": "facilityId", "title": "Facility" },
+      { "field": "avgDockWait", "title": "Avg dock wait (h)", "format": ".2f" },
+      { "field": "dockDelayedLate", "title": "Late trips caused by dock wait", "format": ",.0f" },
+      { "field": "trips", "title": "Trips", "format": ",.0f" }
+    ]
+  }
+}

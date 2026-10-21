@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_FABRIC_ITEM_ID?: string;
   /** Fabric portal base URL (e.g. https://app.fabric.microsoft.com/). */
   readonly VITE_FABRIC_PORTAL_URL?: string;
+  /** Real-Time Dashboard RTD_Ambermoor_Fleet link for the Fleet page (set in .env.production.local; holds IDs, gitignored). */
+  readonly VITE_FLEET_MAP_URL?: string;
 }
 
 interface ImportMeta {

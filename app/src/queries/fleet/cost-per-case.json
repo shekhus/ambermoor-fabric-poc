@@ -1,0 +1,13 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": { "type": "bar" },
+  "encoding": {
+    "y": { "field": "facilityId", "type": "nominal", "title": null, "sort": "-x" },
+    "x": { "field": "costPerCase", "type": "quantitative", "title": "Freight cost per case (USD)" },
+    "tooltip": [
+      { "field": "facilityId", "title": "Facility" },
+      { "field": "costPerCase", "title": "Cost per case", "format": "$,.2f" },
+      { "field": "tripCost", "title": "Trip cost", "format": "$,.0f" }
+    ]
+  }
+}

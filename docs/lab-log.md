@@ -101,3 +101,63 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
   - AT4/AT5 RLS tests with `qa.p03`.
   - Clear the hold detail on tab switch.
   - Root cause of the blank `dim_facility` member.
+
+## FT4 · RLS tested as a P03 user (AT4) · 21 Oct 2026 · [D1]
+- **What/why:** sign in as the P03 QA-manager test user (a B2B guest, Viewer on WS-AMBERMOOR-APP) and check the
+  app shows P03 only. Proves the model's RLS reaches the Fabric App, because the app queries as the signed-in user.
+- **Result: PASS.** The app shows "P03 · Great Lakes Plant" only: 35,338 cases, waste 1.46%, OTIF 91.1%,
+  4 excursions (all TRK-117, based at P03). The header now has a "Viewing: <scope>" badge built from the
+  RLS-filtered facility list, so it can't disagree with the data.
+- **Three fixes were needed, in this order:**
+  1. **Write bypasses RLS.** The test user had *All permissions* on SM_Ambermoor_Ops (Write included), so the
+     roles were ignored. Fix: remove access, re-grant **Read + Build** only. Workspace Admin/Member/Contributor
+     also imply Write, so the user holds no role in DEV.
+  2. **Empty roles.** Nobody was in QA Manager. Added the test user directly (not via a group).
+  3. **"Cannot find table dim_date / dim_facility / fact_waste".** **Direct Lake** used **SSO** (default), so it
+     read OneLake as the viewer, who has no lakehouse access. Fix: model Settings > Gateway and cloud
+     connections > Maps to > Create a connection (OAuth 2.0, Shekhar's account, SSO **off**) = a **fixed
+     identity**. Don't grant the viewer lakehouse access instead: they could then read every plant from OneLake
+     and skip the model's RLS.
+- **Databricks analogue:** a Genie space / AI/BI dashboard that runs with the owner's credentials, plus a row
+  filter function on the table. In Fabric the row filter lives in the semantic model and only binds Read users.
+- **Gotchas:**
+  - A guest lands in their home tenant; open Fabric with `?ctid=<Kion tenant id>`.
+  - Workspace **Manage access** is not item permissions: the model's own *Manage permissions* page is where
+    Write hides.
+  - RLS roles add up: someone in QA Manager and Ops Director sees everything.
+- **Learn:** https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration
+  (permission requirements; "data-access rules aren't enforced for users who have Write permission").
+- **Status:** Direct Lake, semantic model RLS, cloud connections: **GA**. Fabric Apps: **Preview**.
+- **Interview keywords:** **Direct Lake**, **fixed identity vs SSO**, **RLS (USERPRINCIPALNAME())**,
+  **Build permission**, **B2B guest UPN**.
+- **Exam-style questions:**
+  1. A Viewer in the workspace has Write on a Direct Lake model with RLS. What do they see? *All rows. RLS is
+     not enforced for Write (or Admin/Member/Contributor) users.*
+  2. Report users get "Cannot find table" on a Direct Lake model; the author sees data. Least-privilege fix?
+     *Bind the model to a cloud connection with a fixed identity and SSO disabled; don't grant users lakehouse
+     access.*
+  3. Why add test users to roles directly instead of via an Entra group during a POC? *Group membership can
+     take time to propagate and nested/mail groups add doubt; direct membership isolates the RLS rule itself.*
+- **Open:** AT5 (a second plant user, e.g. P02, sees only P02).
+
+## Fleet F1/F3/F5 · data, dashboard and model as code · 21 Oct 2026 · [D1][D2]
+- **What:** fleet data loaded (F1), `RTD_Ambermoor_Fleet` built from JSON (F3), model §6 pushed (F5), and a
+  "Fleet & freight" tab in the app. All by REST from Claude Code; no portal clicks.
+- **Acceptance:** NB_03 asserts PASS (Q9 14, Q10 $3,957,156.99); model E/F PASS (P08 $31.93 highest, P06 $19.05
+  lowest); guest still sees P03 only; 7 RTD tile queries return rows; app validate:visual 3/3.
+- **Gotchas (all hit today):**
+  - **`///` in TMDL is a description, not a comment.** Before a relationship it fails updateDefinition with
+    "Property 'description' is unknown".
+  - **New Direct Lake tables need a refresh (framing)** after updateDefinition, or DAX says the measure "cannot be
+    determined".
+  - **Role members are not in the TMDL definition** that getDefinition returns; they survived updateDefinition.
+    Members added in the portal stay in the service. Test with executeQueries + `impersonatedUserName`.
+  - **`last` is a reserved word in KQL**: `let last = ...` fails with "incomplete fragment"; use `last_ts`.
+  - An empty Real-Time Dashboard's definition is `{}`; the format is the ADX dashboard JSON schema
+    (`dataexplorer.azure.com/static/d/schema/89/dashboard.json`), data source kind `kusto-trident`.
+- **Databricks analogue:** Asset Bundles deploying a job, a Lakeview dashboard JSON and a metric view, then a
+  `REFRESH` on the serving layer.
+- **Status:** Real-Time Dashboard, KQL DB, Direct Lake, Fabric REST item definitions: **GA**. Fabric Apps:
+  **Preview**. Dashboard schema version 89: **status unverified** for Fabric (worked here).
+- **Interview keywords:** **item definition (updateDefinition)**, **framing**, **impersonatedUserName**,
+  **Real-Time Dashboard**, **arg_max latest-state**.

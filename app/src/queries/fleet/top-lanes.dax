@@ -1,0 +1,14 @@
+EVALUATE
+TOPN (
+    10,
+    SUMMARIZECOLUMNS (
+        fact_trip[lane_id],
+        dim_customer[customer_name],
+        "Trips", [Trips],
+        "Trip Cost", [Trip Cost],
+        "Freight Cost per Case", [Freight Cost per Case],
+        "Avg Dock Wait (h)", [Avg Dock Wait (h)]
+    ),
+    [Trip Cost], DESC
+)
+ORDER BY [Trip Cost] DESC
