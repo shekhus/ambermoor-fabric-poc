@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 const TABS: HoldStatus[] = ["Open", "Released", "Destroyed"];
 const CAUSES: RootCause[] = ["Supplier", "Process", "Equipment", "People", "Other"];
 const when = (d: string) => new Date(d).toLocaleString();
+const DUE_MIN = `${new Date().getFullYear() - 1}-01-01`;   // same year range as addAction's check in holds.service.ts
+const DUE_MAX = `${new Date().getFullYear() + 5}-12-31`;
 
 export function HoldsPage({ holds, isLoading, error, onChanged }: {
     holds: Hold[]; isLoading: boolean; error?: Error; onChanged: () => void;
@@ -165,7 +167,7 @@ function HoldDetail({ hold, onChanged }: { hold: Hold; onChanged: () => void }) 
                         value={action.title} onChange={(e) => setAction({ ...action, title: e.target.value })} aria-label="Action title" />
                     <input className={inputClass} placeholder="Owner UPN" maxLength={120} required
                         value={action.owner_upn} onChange={(e) => setAction({ ...action, owner_upn: e.target.value })} aria-label="Owner" />
-                    <input className={inputClass} type="date" required value={action.due_date}
+                    <input className={inputClass} type="date" required value={action.due_date} min={DUE_MIN} max={DUE_MAX}
                         onChange={(e) => setAction({ ...action, due_date: e.target.value })} aria-label="Due date" />
                     <select className={inputClass} value={action.root_cause_category} aria-label="Root cause"
                         onChange={(e) => setAction({ ...action, root_cause_category: e.target.value as RootCause })}>

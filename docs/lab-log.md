@@ -203,3 +203,22 @@ Claude appends one entry per lab (newest first). Keep each entry short. It doubl
 - **Status:** RLS, Direct Lake, Job Scheduler API: **GA**.
 - **Exam-style question:** A role filters `dim_facility`. Which tables does it restrict? *Only tables reached from
   `dim_facility` through active relationships in the filter direction; unrelated tables are unfiltered.*
+
+## Writeback into the model: SQL database mirroring + shortcut · 21 Oct 2026 · [D1][D2]
+- **What:** holds, corrective actions and timeline notes written by the app now appear in `SM_FreshyFresh_Ops`
+  (model §8), filtered by the same plant RLS. `tools/holds_link_apply.py` creates the shortcut, reads the mirrored
+  Delta schemas, patches the TMDL (`tools/sm_add_holds.py`) and refreshes.
+- **Why it works without ETL:** a Fabric SQL database mirrors every eligible table to OneLake as Delta, automatically;
+  a OneLake **schema shortcut** makes that folder a lakehouse schema; **Direct Lake on OneLake** reads it.
+- **Gotchas:**
+  - Bad operational data breaks analytics: one due date typed as year 0004 made Direct Lake fail to load the column
+    ("A DateTime value is outside the range"). Fixed the row; the app now validates the date range.
+  - The schema shortcut brings every mirrored table, including Rayfin's `Users`; the model only picks the three.
+  - Rows the app "deletes" by archiving still mirror; every measure filters `status <> "Archived"`.
+- **Databricks analogue:** Lakebase/OLTP table synced to Delta (or Lakehouse Federation) joined into a metric view.
+- **Status:** SQL database in Fabric mirroring, OneLake shortcuts, Direct Lake: **status unverified today** for SQL
+  database GA (one Learn page still says Preview); shortcuts and Direct Lake: **GA**.
+- **Interview keywords:** **mirroring**, **OneLake shortcut (schema shortcut)**, **Direct Lake on OneLake**, **writeback**.
+- **Exam-style question:** An app writes to a Fabric SQL database; analysts want those rows in an existing Direct
+  Lake model on a lakehouse without a pipeline. How? *Shortcut the database's mirrored Delta tables into the
+  lakehouse and add them to the model (relate them to the RLS dimension).*

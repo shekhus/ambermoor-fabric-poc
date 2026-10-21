@@ -29,7 +29,8 @@ VALUE_LISTS = {
     "dim_product[category]": "VALUES ( dim_product[category] )",
     "dim_truck[unit_type]": "VALUES ( dim_truck[unit_type] )",
 }
-SKIP_COLUMNS = {"qa_manager_upn", "contact_email", "contact_phone"}   # RLS key and PII-style columns: never needed
+SKIP_COLUMNS = {"qa_manager_upn", "contact_email", "contact_phone",   # RLS key and PII-style columns: never needed
+                "opened_by", "owner_upn", "author"}                       # people on holds/actions/timeline
 
 
 def token(resource: str) -> str:
@@ -85,9 +86,17 @@ def main():
     rels = dax('EVALUATE SELECTCOLUMNS ( INFO.VIEW.RELATIONSHIPS (), "f", [FromTable] & "[" & [FromColumn] & "]", '
                '"t", [ToTable] & "[" & [ToColumn] & "]" )')
 
-    # RLS lives on dim_facility, so only facts with a relationship to it are row-filtered. Facts without one would
+    # RLS lives on dim_facility, so only tables that reach it through many-to-one relationships are row-filtered
+    # (directly, or via a chain such as corrective_action -> quality_hold -> dim_facility). Tables that don't would
     # show every plant's rows to a plant user: keep them out of the Ask context (the function also blocks them).
-    scoped = {f.split("[")[0] for f, t in rels if t.startswith("dim_facility[")}
+    parents: dict[str, set[str]] = {}
+    for f, t in rels:
+        parents.setdefault(f.split("[")[0], set()).add(t.split("[")[0])
+
+    def reaches_facility(table, seen=()):
+        return any(p == "dim_facility" or (p not in seen and reaches_facility(p, (*seen, table)))
+                   for p in parents.get(table, ()))
+    scoped = {t for t in parents if reaches_facility(t)}
     allowed = {t for t, _, _ in cols if t.startswith("dim_") or t in scoped}
     blocked = sorted({t for t, _, _ in cols} - allowed)
     rels = [(f, t) for f, t in rels if f.split("[")[0] in allowed]

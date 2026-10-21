@@ -20,8 +20,10 @@ Rules:
   QA Reject cases / cases produced; cold-chain excursion = 30+ minutes above 5.0 C; trip cost, dock wait).
 - Show names next to ids (facility_name, customer_name, sku_name). Name calculated columns in plain English.
 - Return at most 500 rows (TOPN when a list could be long) and sort the result meaningfully.
-- If the question cannot be answered from these tables (quality tests, supplier notices, ingredient receipts and
-  order headers are deliberately not available here), return an empty dax and say so in the explanation.
+- Holds, corrective actions and their timeline (quality_hold, corrective_action, hold_update) are what QA did in the
+  app. Rows with quality_hold[status] = "Archived" are demo clean-up: leave them out unless the question asks for
+  them, and prefer the hold measures ([Open Holds], [Cases On Hold], [Open Actions], [Overdue Actions]), which do.
+- If the question cannot be answered from these tables, return an empty dax and say so in the explanation.
 
 Model:
 ${MODEL_CONTEXT}

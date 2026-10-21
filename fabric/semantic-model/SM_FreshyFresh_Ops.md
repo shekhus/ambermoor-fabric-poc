@@ -155,6 +155,29 @@ EVALUATE ROW ( "lines", COUNTROWS ( fact_shipment_line ), "bridge", COUNTROWS ( 
     "receipts", COUNTROWS ( fact_ingredient_receipt ), "notices", COUNTROWS ( fact_supplier_notice ) )
 ```
 
+## 8. App writeback in the model: holds, actions, timeline (21 Oct 2026; `tools/holds_link_apply.py`)
+The app writes holds to its Fabric SQL database (WS-FRESHYFRESH-APP). That database mirrors to OneLake
+automatically, and a **schema shortcut** `app` in LH_FreshyFresh points at its `Tables/dbo`, so Direct Lake reads the
+same rows with no copy and no pipeline.
+
+| Model table | Source (lakehouse) | Relationship |
+|---|---|---|
+| `quality_hold` | `app.QualityHolds` | `quality_hold[facility_id]` → `dim_facility[facility_id]` (RLS) |
+| `corrective_action` | `app.CorrectiveActions` | `corrective_action[hold_id]` → `quality_hold[id]` |
+| `hold_update` | `app.HoldUpdates` | `hold_update[hold_id]` → `quality_hold[id]` |
+
+Measures (folder Holds; all ignore `status = "Archived"`, set by the Tutorial reset): Holds, Open Holds,
+Cases On Hold, Destroyed Holds, Open Actions, Overdue Actions.
+
+Freshness: SQL database → OneLake mirroring is near real-time (Learn: mirroring FAQ); the model sees new rows after
+its next framing (automatic Direct Lake updates, or a refresh). Gotcha: a date before 1900 in the app database (a
+typo like year 0004) stops Direct Lake loading the column; the app now rejects due dates outside last year to +5.
+
+```dax
+// H. Holds: admin sees every plant's holds; the P03 guest only P03's
+EVALUATE SUMMARIZECOLUMNS ( quality_hold[facility_id], quality_hold[status], "n", COUNTROWS ( quality_hold ) )
+```
+
 ## Optional accelerator: let Claude Code build the model
 Microsoft's Power BI Modeling/Authoring MCP server can create tables, relationships, measures and roles
 (local server GA v1.0.0, Sept 2026; hosted endpoint Preview). It needs the XMLA endpoint (Read Write).

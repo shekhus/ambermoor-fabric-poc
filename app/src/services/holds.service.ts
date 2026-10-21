@@ -118,11 +118,18 @@ export async function addAction(
     holdId: string,
     input: { title: string; owner_upn: string; due_date: string; root_cause_category: RootCause },
 ): Promise<void> {
+    // A typo like year 0004 saves in SQL but breaks the semantic model (Direct Lake can't load dates before 1900).
+    const due = new Date(input.due_date);
+    const year = due.getFullYear();
+    const thisYear = new Date().getFullYear();
+    if (Number.isNaN(due.getTime()) || year < thisYear - 1 || year > thisYear + 5) {
+        throw new Error(`Due date ${input.due_date} looks wrong: pick a date between ${thisYear - 1} and ${thisYear + 5}.`);
+    }
     await client().data.CorrectiveAction.create({
         hold: { id: holdId },
         title: input.title,
         owner_upn: input.owner_upn,
-        due_date: new Date(input.due_date),
+        due_date: due,
         status: "Open",
         root_cause_category: input.root_cause_category,
     } as never);
